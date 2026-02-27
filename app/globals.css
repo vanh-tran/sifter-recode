@@ -1,0 +1,242 @@
+@import "tailwindcss";
+
+/* ============================================
+   SIFTER BRAND DESIGN TOKENS
+   Official brand guide (logo + body fonts & colors)
+   ============================================ */
+:root {
+  /* App background (keep this in sync with brand background for a cohesive pastel feel) */
+  --background: var(--brand-background, #f7f7f4);
+  --foreground: #171717;
+
+  /* Logo: Bai Jamjuree, Medium | Charcoal #2d2d2d (RGB 45,45,45) */
+  --brand-charcoal: #2d2d2d;
+
+  /* Body: Adelle Sans Devanagari, Regular | Background #f0f0ed (RGB 240,240,237) */
+  --brand-primary: #171717;
+  /* Slightly brighter + warmer than the original guide to feel more airy/pastel */
+  --brand-background: #fafaf8;
+  --brand-background-subtle: rgba(45, 45, 45, 0.02);
+  --brand-background-grid: rgba(45, 45, 45, 0.01);
+  --brand-muted: #64748b;
+  --brand-muted-light: #94a3b8;
+  --brand-border: #cbd5e1;
+  --brand-border-focus: #64748b;
+  --brand-input-placeholder: #64748b;
+  --brand-divider-bg: #fafaf8;
+
+  /* Surfaces (used for nav pills, subtle highlights, etc.) */
+  --brand-surface: #ffffff;
+  /* Slightly darker than --brand-background for visible contrast */
+  --brand-surface-muted: #f0f0ed;
+
+  /* Brand primary hover (keep consistent with logo charcoal) */
+  --brand-primary-hover: var(--brand-charcoal);
+
+  /* Semantic: destructive/blocked */
+  --brand-destructive: #dc2626;
+  --brand-destructive-soft: #fef2f2;
+
+  /* Semantic: warning/in-progress */
+  --brand-warning: #d97706;
+  --brand-warning-soft: #fefce8;
+
+  /* Semantic: success/completed */
+  --brand-success: #22c55e;
+  --brand-success-soft: #eefdf2;
+
+  /* Pastel accents (for tables, badges, etc.) */
+  --pastel-blue: #e0f2fe;
+  --pastel-blue-text: #0369a1;
+  --pastel-lavender: #ede9fe;
+  --pastel-lavender-text: #5b21b6;
+  --pastel-mint: #d1fae5;
+  --pastel-mint-text: #047857;
+  --pastel-rose: #ffe4e6;
+  --pastel-rose-text: #be123c;
+  --pastel-amber: #fef3c7;
+  --pastel-amber-text: #b45309;
+
+  /* Body font: Adelle Sans Devanagari, Regular */
+  --font-brand: 'Adelle Sans Devanagari', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  /* Brand color utilities */
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-charcoal: var(--brand-charcoal);
+  --color-brand-background: var(--brand-background);
+  --color-brand-surface: var(--brand-surface);
+  --color-brand-surface-muted: var(--brand-surface-muted);
+  --color-brand-muted: var(--brand-muted);
+  --color-brand-muted-light: var(--brand-muted-light);
+  --color-brand-border: var(--brand-border);
+  --color-brand-border-focus: var(--brand-border-focus);
+  --color-brand-destructive: var(--brand-destructive);
+  --color-brand-destructive-soft: var(--brand-destructive-soft);
+  --color-brand-warning: var(--brand-warning);
+  --color-brand-warning-soft: var(--brand-warning-soft);
+  --color-brand-success: var(--brand-success);
+  --color-brand-success-soft: var(--brand-success-soft);
+
+  /* Pastel utilities */
+  --color-pastel-blue: var(--pastel-blue);
+  --color-pastel-blue-text: var(--pastel-blue-text);
+  --color-pastel-lavender: var(--pastel-lavender);
+  --color-pastel-lavender-text: var(--pastel-lavender-text);
+  --color-pastel-mint: var(--pastel-mint);
+  --color-pastel-mint-text: var(--pastel-mint-text);
+  --color-pastel-rose: var(--pastel-rose);
+  --color-pastel-rose-text: var(--pastel-rose-text);
+  --color-pastel-amber: var(--pastel-amber);
+  --color-pastel-amber-text: var(--pastel-amber-text);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-brand: var(--font-brand);
+  /* Logo font: Bai Jamjuree, Medium — use font-brand-logo class */
+  --font-brand-logo: var(--font-brand-logo);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+    --brand-background: #0a0a0a;
+    --brand-divider-bg: #0a0a0a;
+    --brand-surface: #0f0f10;
+    --brand-surface-muted: #111827;
+    --brand-primary-hover: #111827;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-brand);
+}
+
+/* Brand font: Adelle Sans Devanagari */
+/* Add AdelleSansDevanagari-Regular.woff2 to public/fonts/ to use the custom font */
+@font-face {
+  font-family: 'Adelle Sans Devanagari';
+  src: url('/fonts/AdelleSansDevanagari-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Landing page: warm background + brand font + brand colors */
+.landing-page {
+  --landing-bg: var(--brand-background);
+  --landing-font: var(--font-brand);
+  background: var(--landing-bg);
+  font-family: var(--landing-font);
+  color: var(--brand-primary);
+}
+
+/* Brand grid pattern (used on root hero) */
+.brand-grid-bg {
+  background-image:
+    linear-gradient(var(--brand-background-subtle) 1px, transparent 1px),
+    linear-gradient(90deg, var(--brand-background-grid) 1px, transparent 1px);
+  background-size: 5px 5px;
+}
+
+/* Reusable brand component styles */
+.btn-brand-primary {
+  background-color: var(--brand-primary);
+  color: white;
+  font-weight: 500;
+}
+.btn-brand-primary:hover:not(:disabled) {
+  background-color: var(--brand-primary-hover);
+}
+.btn-brand-primary:disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.input-brand {
+  border-color: var(--brand-border);
+  color: var(--brand-primary);
+}
+.input-brand::placeholder {
+  color: var(--brand-input-placeholder);
+}
+.input-brand:focus {
+  outline: none;
+  border-color: var(--brand-border-focus);
+  box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.2);
+}
+
+.link-brand {
+  color: var(--brand-primary);
+}
+.link-brand:hover {
+  opacity: 0.8;
+}
+
+/* Alert: soft destructive variant */
+.alert-destructive {
+  background-color: var(--brand-destructive-soft);
+  color: var(--brand-destructive);
+  border: none;
+}
+
+/* Badge status variants */
+.badge-in-progress {
+  border: 1px solid rgba(217, 119, 6, 0.22);
+  background-color: var(--brand-warning-soft);
+  color: #92400e;
+  outline: none;
+}
+.badge-in-progress:focus-visible {
+  box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.25);
+}
+a.badge-in-progress:hover {
+  background-color: #fef9c3;
+}
+
+.badge-blocked {
+  border: 1px solid rgba(220, 38, 38, 0.18);
+  background-color: var(--brand-destructive-soft);
+  color: #991b1b;
+  outline: none;
+}
+.badge-blocked:focus-visible {
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.25);
+}
+a.badge-blocked:hover {
+  background-color: #fee2e2;
+}
+
+.badge-completed {
+  border: 1px solid rgba(34, 197, 94, 0.22);
+  /* Slightly richer fill so it reads on muted surfaces */
+  background-color: #dcfce7;
+  color: #166534;
+  outline: none;
+}
+.badge-completed:focus-visible {
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25);
+}
+a.badge-completed:hover {
+  background-color: #dcfce7;
+}
+
+/* Page transition for smoother navigation */
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.page-transition {
+  animation: page-fade-in 0.25s ease-out;
+}
