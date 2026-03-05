@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { createClient } from "@/lib/supabase/client";
+import { auth } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -11,14 +11,12 @@ export default function LoginPage() {
     "idle" | "loading" | "success" | "error"
   >("idle");
   const [message, setMessage] = useState("");
-  const supabase = createClient();
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus("loading");
     setMessage("");
 
-    const { error } = await supabase.auth.signInWithOtp({
+    const { error } = await auth.signInWithOtp({
       email,
       options: {
         shouldCreateUser: false,
@@ -28,7 +26,7 @@ export default function LoginPage() {
 
     if (error) {
       setStatus("error");
-      setMessage(error.message);
+      setMessage("Unable to send magic link. Please try again.");
     } else {
       setStatus("success");
       setMessage("Check your email for a magic link to sign in.");
@@ -36,7 +34,7 @@ export default function LoginPage() {
   };
 
   const handleGoogleClick = async () => {
-    await supabase.auth.signInWithOAuth({
+    await auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,

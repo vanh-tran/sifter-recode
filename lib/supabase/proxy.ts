@@ -30,25 +30,40 @@ export async function updateSession(request: NextRequest) {
   );
 
   // Do not run code between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to
+  // supabase.auth.getClaims(). A simple mistake could make it very hard to
   // debug issues with users being randomly logged out.
 
-  // IMPORTANT: DO NOT REMOVE. Calling getUser() refreshes the auth token
-  // if expired. Without this, sessions will break silently.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // IMPORTANT: DO NOT REMOVE. Calling getClaims() validates the JWT against
+  // the project's JWKS endpoint and refreshes the auth token if expired.
+  // Without this, sessions will break silently.
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims;
+  const pathname = request.nextUrl.pathname;
+
+  const copySupabaseCookies = (response: NextResponse) => {
+    supabaseResponse.cookies.getAll().forEach(({ name, value, ...options }) => {
+      response.cookies.set(name, value, options);
+    });
+    return response;
+  };
 
   if (
     !user &&
-    !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/register") &&
-    !request.nextUrl.pathname.startsWith("/auth") &&
-    request.nextUrl.pathname !== "/"
+    !pathname.startsWith("/login") &&
+    !pathname.startsWith("/register") &&
+    !pathname.startsWith("/auth") &&
+    pathname !== "/"
   ) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    return NextResponse.redirect(url);
+    return copySupabaseCookies(NextResponse.redirect(url));
+  }
+
+  // Authenticated users should not access auth-only pages.
+  if (user && (pathname.startsWith("/login") || pathname.startsWith("/register"))) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard";
+    return copySupabaseCookies(NextResponse.redirect(url));
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as-is.
@@ -61,4 +76,7 @@ export async function updateSession(request: NextRequest) {
 }
 
 // Docs: https://supabase.com/docs/guides/auth/server-side/creating-a-client
+// Docs: https://supabase.com/docs/guides/auth/server-side/nextjs
+// Docs: https://supabase.com/docs/guides/auth/server-side/advanced-guide
+// Docs: https://supabase.com/docs/guides/troubleshooting/how-do-you-troubleshoot-nextjs---supabase-auth-issues-riMCZV
 // Source: https://github.com/supabase/supabase/blob/master/examples/auth/nextjs/lib/supabase/proxy.ts
