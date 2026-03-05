@@ -11,9 +11,11 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const DEFAULT_LIMIT = 25;
 
-const CACHE_HEADERS = {
-  'Cache-Control': 'private, max-age=120',
-  'Vary': 'Authorization',
+// SECURITY: Do NOT cache user-specific data. Browser HTTP cache key does not
+// include cookies when Vary is Authorization (Supabase uses cookies). Caching
+// would leak Org A's invoices to Org B after switching accounts.
+const NO_CACHE_HEADERS = {
+  'Cache-Control': 'no-store, must-revalidate',
 };
 
 export async function GET(request: NextRequest) {
@@ -136,7 +138,7 @@ export async function GET(request: NextRequest) {
         limit,
         offset,
       },
-      { headers: CACHE_HEADERS }
+      { headers: NO_CACHE_HEADERS }
     );
   } catch (error) {
     console.error('Error in GET /api/invoices:', error);
