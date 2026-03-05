@@ -97,6 +97,7 @@ export async function fetchInvoices(
 
   const response = await fetch(`/api/invoices?${params.toString()}`, {
     credentials: 'same-origin', // cookies sent for auth (server reads them)
+    cache: 'no-store', // SECURITY: prevent browser from serving cached data after org switch
   });
 
   if (!response.ok) {
@@ -116,6 +117,7 @@ export async function fetchInvoices(
 export async function fetchInvoice(invoiceId: string): Promise<InvoiceDetail> {
   const response = await fetch(`/api/invoices/${invoiceId}`, {
     credentials: 'same-origin',
+    cache: 'no-store', // SECURITY: prevent browser from serving cached data after org switch
   });
 
   if (!response.ok) {

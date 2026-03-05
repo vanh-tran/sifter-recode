@@ -59,6 +59,7 @@ export async function fetchFindings(
 
   const response = await fetch(`/api/findings?${params.toString()}`, {
     credentials: 'same-origin',
+    cache: 'no-store', // SECURITY: prevent browser from serving cached data after org switch
   });
 
   if (!response.ok) {

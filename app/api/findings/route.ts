@@ -24,10 +24,10 @@ const SEVERITY_ALLOWLIST = ['critical', 'high', 'medium', 'low', 'info'] as cons
 const MAX_FILTER_LEN = 64;
 const FILTER_PATTERN = /^[a-zA-Z0-9_-]+$/;
 
-const CACHE_HEADERS = {
-    'Cache-Control': 'private, max-age=120',
-    'Vary': 'Authorization',
-  };
+// SECURITY: Do NOT cache user-specific data. Same vulnerability as /api/invoices.
+const NO_CACHE_HEADERS = {
+  'Cache-Control': 'no-store, must-revalidate',
+};
 
 export async function GET(request: NextRequest) {
   try {
@@ -224,7 +224,7 @@ export async function GET(request: NextRequest) {
         offset,
         summary: { total_savings: totalSavings },
       },
-      { headers: CACHE_HEADERS }
+      { headers: NO_CACHE_HEADERS }
     );
 
   } catch (error) {
