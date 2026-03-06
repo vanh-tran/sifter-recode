@@ -25,13 +25,9 @@ const CONTINENTS: [number, number][][] = [
   [[-15,130],[-15,145],[-40,148],[-38,140],[-32,120],[-22,114],[-15,130]],
 ];
 
-const FONT_SIZE_PX = 11;
+const FONT_SIZE_PX = 11; // Used for cols/rows calculation; display size via .hero-globe-pre
 const LINE_HEIGHT = 1.15;
 // Globe frame size (easy to tune)
-const GLOBE_MAX_WIDTH_PX = 1000;
-const GLOBE_MAX_HEIGHT_PX = 600;
-const GLOBE_MAX_VIEWPORT_WIDTH = '94vw';
-const GLOBE_MAX_VIEWPORT_HEIGHT = '68vh';
 
 function pointInPolygon(lat: number, lon: number, poly: [number, number][]) {
   let inside = false;
@@ -82,13 +78,16 @@ export default function ClientHeroGlobe() {
 
     function recalc() {
       const node = containerRef.current;
-      if (!node) return;
-      const width = Math.max(320, node.clientWidth);
-      const height = Math.max(220, node.clientHeight);
-      const charWidth = FONT_SIZE_PX * 0.62; // ui-monospace approximation
-      const charHeight = FONT_SIZE_PX * LINE_HEIGHT;
-      const cols = Math.max(80, Math.min(130, Math.floor(width / charWidth)));
-      const rows = Math.max(28, Math.min(42, Math.floor(height / charHeight)));
+      const preNode = preRef.current;
+      if (!node || !preNode) return;
+      const actualFontSize = parseFloat(getComputedStyle(preNode).fontSize) || FONT_SIZE_PX;
+      const charWidth = actualFontSize * 0.62;
+      const charHeight = actualFontSize * LINE_HEIGHT;
+      const width = node.clientWidth;
+      const height = node.clientHeight;
+      if (width < 10 || height < 10) return;
+      const cols = Math.min(130, Math.floor(width / charWidth));
+      const rows = Math.min(50, Math.floor(height / charHeight));
       setDims({ cols, rows });
     }
 
@@ -239,14 +238,12 @@ export default function ClientHeroGlobe() {
   return (
     <div
       ref={rootRef}
-      className="relative w-full h-full select-none flex items-center justify-center overflow-visible"
+      className="relative w-full h-full select-none flex items-center justify-center overflow-hidden"
     >
       <div
         ref={containerRef}
-        className="flex items-center justify-center"
+        className="hero-globe-container flex items-center justify-center"
         style={{
-          width: `min(${GLOBE_MAX_VIEWPORT_WIDTH}, ${GLOBE_MAX_WIDTH_PX}px)`,
-          height: `min(${GLOBE_MAX_VIEWPORT_HEIGHT}, ${GLOBE_MAX_HEIGHT_PX}px)`,
           background: 'radial-gradient(ellipse 50% 65% at 50% 50%, rgba(0,0,0,0.04) 0%, transparent 70%)',
         }}
       >
@@ -270,10 +267,9 @@ export default function ClientHeroGlobe() {
         >
           <div
             ref={preRef}
-            className="leading-[1.15] select-none whitespace-pre pointer-events-none"
+            className="hero-globe-pre leading-[1.15] select-none whitespace-pre pointer-events-none"
             style={{
               fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, monospace',
-              fontSize: `${FONT_SIZE_PX}px`,
             }}
           />
         </div>
@@ -285,13 +281,13 @@ export default function ClientHeroGlobe() {
         }`}
         onClick={() => setShowOverlay(false)}
       >
-        <div className="w-full max-w-4xl px-8 py-6">
-          <h2 className="text-xl font-semibold text-slate-800 mb-8">{content.title}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
+        <div className="w-full max-w-4xl px-4 sm:px-8 py-6 pb-24 sm:pb-6">
+          <h2 className="text-lg sm:text-xl font-semibold text-slate-800 mb-6 sm:mb-8">{content.title}</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8 sm:gap-y-10">
             {content.leftColumn.map((leftSection, i) => (
               <React.Fragment key={leftSection.header}>
-                <div className="flex flex-col items-start">
-                  <h3 className="text-xs font-medium tracking-wider text-slate-500 uppercase mb-3">
+                <div className="flex flex-col items-start min-w-0">
+                  <h3 className="text-xs font-medium tracking-wider text-slate-500 uppercase mb-2 sm:mb-3">
                     {leftSection.header}
                   </h3>
                   <ul className="space-y-1.5 text-sm text-slate-700">
@@ -300,8 +296,8 @@ export default function ClientHeroGlobe() {
                     ))}
                   </ul>
                 </div>
-                <div className="flex flex-col items-start">
-                  <h3 className="text-xs font-medium tracking-wider text-slate-500 uppercase mb-3">
+                <div className="flex flex-col items-start min-w-0">
+                  <h3 className="text-xs font-medium tracking-wider text-slate-500 uppercase mb-2 sm:mb-3">
                     {content.rightColumn[i]!.header}
                   </h3>
                   <ul className="space-y-1.5 text-sm text-slate-700">
@@ -313,7 +309,7 @@ export default function ClientHeroGlobe() {
               </React.Fragment>
             ))}
           </div>
-          <p className="text-center text-xs text-slate-500 mt-10">{content.footerHint}</p>
+          <p className="text-center text-xs text-slate-500 mt-8 sm:mt-10">{content.footerHint}</p>
         </div>
       </div>
     </div>
