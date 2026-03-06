@@ -47,20 +47,25 @@ export async function updateSession(request: NextRequest) {
     return response;
   };
 
-  if (
-    !user &&
-    !pathname.startsWith("/login") &&
-    !pathname.startsWith("/register") &&
-    !pathname.startsWith("/auth") &&
-    pathname !== "/"
-  ) {
+  const publicPaths = [
+    "/",
+    "/login",
+    "/register",
+    "/contact",
+    "/book",
+    "/auth",
+    "/auth/callback",
+    "/auth/auth-code-error",
+    // /admin-booking and /api/booking/oauth/* require auth — not in publicPaths
+  ];
+  if (!user && !publicPaths.includes(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return copySupabaseCookies(NextResponse.redirect(url));
   }
 
   // Authenticated users should not access auth-only pages.
-  if (user && (pathname.startsWith("/login") || pathname.startsWith("/register"))) {
+  if (user && (pathname === "/login" || pathname === "/register")) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return copySupabaseCookies(NextResponse.redirect(url));
