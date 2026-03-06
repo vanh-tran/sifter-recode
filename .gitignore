@@ -3,7 +3,6 @@
 # dependencies
 /node_modules
 /.pnp
-.pnpm-store
 .pnp.*
 .yarn/*
 !.yarn/patches
@@ -47,6 +46,3 @@ next-env.d.ts
 
 # cursor
 .cursor
-
-# vscode
-.vscode

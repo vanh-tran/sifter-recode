@@ -138,6 +138,29 @@ body {
   color: var(--brand-primary);
 }
 
+/* Hero globe: fill available hero space, capped on large screens */
+.hero-globe-container {
+  width: 100%;
+  height: 100%;
+  max-width: 1000px;
+  max-height: 600px;
+}
+
+/* ASCII globe: responsive font size */
+.hero-globe-pre {
+  font-size: 7px;
+}
+@media (min-width: 640px) {
+  .hero-globe-pre {
+    font-size: 9px;
+  }
+}
+@media (min-width: 768px) {
+  .hero-globe-pre {
+    font-size: 11px;
+  }
+}
+
 /* Brand grid pattern (used on root hero) */
 .brand-grid-bg {
   background-image:
@@ -226,6 +249,21 @@ a.badge-blocked:hover {
 }
 a.badge-completed:hover {
   background-color: #dcfce7;
+}
+
+/* Booking page: slot panel slide-in */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.animate-slide-in-right {
+  animation: slideInRight 0.3s ease-out;
 }
 
 /* Page transition for smoother navigation */
