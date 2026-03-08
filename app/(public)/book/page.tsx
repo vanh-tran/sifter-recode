@@ -80,28 +80,24 @@ function formatSelectedDate(date: Date, tz: string): string {
   });
 }
 
-/** Format date for display without timezone conversion (matches calendar selection). */
-function formatSelectedDateLocal(date: Date): string {
-  return date.toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
-}
-
 function getTimezoneLabel(tz: string): string {
   return TIMEZONES.find((t) => t.value === tz)?.label ?? tz;
 }
 
-export default function BookPage() {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+/** Get today's date (YYYY-MM-DD) in the given timezone. */
+function getTodayInTimezone(tz: string): string {
+  return new Date().toLocaleDateString("en-CA", { timeZone: tz });
+}
 
-  const [viewDate, setViewDate] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
+export default function BookPage() {
+  const [viewDate, setViewDate] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
   const [selectedDate, setSelectedDate] = useState<Date | null>(() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d;
+    const todayStr = getTodayInTimezone("America/Los_Angeles");
+    const [y, m, d] = todayStr.split("-").map(Number);
+    return new Date(y, m - 1, d);
   });
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [slots, setSlots] = useState<Slot[]>([]);
@@ -127,13 +123,23 @@ export default function BookPage() {
     };
   }, []);
 
+  // Sync selectedDate to "today" in the selected timezone (so black highlight uses tz, not local)
+  useEffect(() => {
+    const todayStr = getTodayInTimezone(timezone);
+    const [y, m, d] = todayStr.split("-").map(Number);
+    setSelectedDate(new Date(y, m - 1, d));
+  }, [timezone]);
+
   const showSlots = calendarReady && !!selectedDate && !selectedSlot;
 
   const days = getDaysInMonth(viewDate.getFullYear(), viewDate.getMonth());
 
+  const toDateStr = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
   const fetchSlots = useCallback(async () => {
     if (!selectedDate) return;
-    const dateStr = selectedDate.toISOString().slice(0, 10);
+    const dateStr = toDateStr(selectedDate);
     setSlotsLoading(true);
     setSlotsError(null);
     try {
@@ -175,11 +181,9 @@ export default function BookPage() {
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate();
 
-  const isToday = (d: Date) => isSameDay(d, today);
-  const isPastDate = (d: Date) => {
-    const dStart = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    return dStart.getTime() < today.getTime();
-  };
+  const todayInTz = getTodayInTimezone(timezone);
+  const isToday = (d: Date) => toDateStr(d) === todayInTz;
+  const isPastDate = (d: Date) => toDateStr(d) < todayInTz;
   const isSelected = (d: Date) => selectedDate && isSameDay(d, selectedDate);
   const isCurrentMonth = (d: Date) =>
     d.getMonth() === viewDate.getMonth();
@@ -211,6 +215,7 @@ export default function BookPage() {
           attendeeName: formName,
           attendeeEmail: formEmail,
           notes: formNotes || undefined,
+          tz: timezone,
         }),
       });
       const data = (await res.json()) as { success?: boolean; error?: string };
@@ -330,7 +335,7 @@ export default function BookPage() {
                       <div className="flex items-center gap-2 text-slate-600">
                         <Clock className="w-4 h-4 shrink-0" />
                         <span className="text-sm">
-                          {formatSelectedDateLocal(selectedDate)} at{" "}
+                          {formatSelectedDate(selectedDate, timezone)} at{" "}
                           {formatSlotTime(selectedSlot.start, timezone, use24h)}
                         </span>
                       </div>
@@ -594,7 +599,7 @@ export default function BookPage() {
                     {selectedDate && (
                       <div key={selectedDate.toISOString()} className="flex flex-col flex-1 min-h-0 pt-4">
                         <p className="text-sm font-medium text-slate-700 shrink-0">
-                          {formatSelectedDateLocal(selectedDate)}
+                          {formatSelectedDate(selectedDate, timezone)}
                         </p>
                         <div className="flex-1 min-h-0 overflow-visible lg:overflow-y-auto pt-3 pb-4 overscroll-contain">
                           {slotsLoading ? (

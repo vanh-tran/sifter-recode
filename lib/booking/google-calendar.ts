@@ -28,8 +28,7 @@ export async function getAccessToken(refreshToken: string): Promise<string> {
   });
 
   if (!res.ok) {
-    const err = await res.text();
-    console.error("[booking/google-calendar] Token refresh failed:", err);
+    console.error("[booking/google-calendar] Token refresh failed");
     throw new Error("Token refresh failed");
   }
 
@@ -65,8 +64,7 @@ export async function getFreeBusy(
   });
 
   if (!res.ok) {
-    const err = await res.text();
-    console.error("[booking/google-calendar] Freebusy failed:", err);
+    console.error("[booking/google-calendar] Freebusy failed");
     throw new Error("Freebusy request failed");
   }
 
@@ -139,8 +137,7 @@ export async function createCalendarEvent(
   });
 
   if (!res.ok) {
-    const err = await res.text();
-    console.error("[booking/google-calendar] Create event failed:", err);
+    console.error("[booking/google-calendar] Create event failed");
     throw new Error("Create event failed");
   }
 

@@ -82,8 +82,7 @@ export async function GET(request: NextRequest) {
   });
 
   if (!tokenRes.ok) {
-    const err = await tokenRes.text();
-    console.error("[booking/oauth] Token exchange failed:", err);
+    console.error("[booking/oauth] Token exchange failed");
     return errorRedirect(request, "Token exchange failed");
   }
 
@@ -133,7 +132,7 @@ export async function GET(request: NextRequest) {
   });
 
   if (insertError) {
-    console.error("[booking/oauth] Insert failed:", insertError);
+    console.error("[booking/oauth] Insert failed");
     return errorRedirect(request, "Failed to save token");
   }
 

@@ -4,11 +4,13 @@
  *
  * Fetches busy blocks from all connected calendars, merges them, returns free slots.
  * In development, writes raw calendar data to /temp for verification.
- *
- * TODO: Add rate limiting (e.g. 20 req/min per IP) to prevent abuse.
  */
 
 import { createClient } from "@supabase/supabase-js";
+import {
+  checkRateLimit,
+  getRateLimitKey,
+} from "@/lib/booking/rate-limit";
 import { mkdir, writeFile } from "fs/promises";
 import { join } from "path";
 import { NextRequest, NextResponse } from "next/server";
@@ -34,21 +36,21 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const VALID_TZ = new Set([
   "America/Los_Angeles",
   "America/Denver",
+  "America/Phoenix",
   "America/Chicago",
   "America/New_York",
   "America/Anchorage",
   "Pacific/Honolulu",
+  "America/Puerto_Rico",
+  "Pacific/Guam",
+  "Pacific/Saipan",
+  "Pacific/Pago_Pago",
   "UTC",
-  "Europe/London",
-  "Europe/Paris",
-  "Asia/Tokyo",
-  "Australia/Sydney",
 ]);
 
 async function writeTempDump(
   dateStr: string,
   data: {
-    rawBusyByEmail: Record<string, BusyInterval[]>;
     mergedBusy: Interval[];
     slots: { start: string; end: string }[];
     queryWindow: { timeMin: string; timeMax: string };
@@ -61,11 +63,19 @@ async function writeTempDump(
     const filepath = join(tempDir, filename);
     await writeFile(filepath, JSON.stringify(data, null, 2), "utf-8");
   } catch (err) {
-    console.error("[booking/availability] Failed to write temp dump:", err);
+    console.error("[booking/availability] Failed to write temp dump");
   }
 }
 
 export async function GET(request: NextRequest) {
+  const key = getRateLimitKey(request, "availability");
+  if (!checkRateLimit(key, 20, 60 * 1000)) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429 }
+    );
+  }
+
   const dateParam = request.nextUrl.searchParams.get("date");
   const tzParam = request.nextUrl.searchParams.get("tz");
   const durationParam = request.nextUrl.searchParams.get("duration");
@@ -83,19 +93,20 @@ export async function GET(request: NextRequest) {
     Math.max(15, parseInt(durationParam ?? "30", 10) || 30)
   );
 
-  const date = new Date(`${dateParam}T12:00:00.000Z`);
   const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const maxDate = new Date(todayStart);
+  const todayInTz = now.toLocaleDateString("en-CA", { timeZone: tz });
+  const [ty, tm, td] = todayInTz.split("-").map(Number);
+  const maxDate = new Date(ty, tm - 1, td);
   maxDate.setDate(maxDate.getDate() + MAX_DAYS_AHEAD);
+  const maxDateStr = `${maxDate.getFullYear()}-${String(maxDate.getMonth() + 1).padStart(2, "0")}-${String(maxDate.getDate()).padStart(2, "0")}`;
 
-  if (date.getTime() < todayStart.getTime()) {
+  if (dateParam < todayInTz) {
     return NextResponse.json(
       { error: "Date must be today or in the future." },
       { status: 400 }
     );
   }
-  if (date.getTime() > maxDate.getTime()) {
+  if (dateParam > maxDateStr) {
     return NextResponse.json(
       { error: `Date must be within the next ${MAX_DAYS_AHEAD} days.` },
       { status: 400 }
@@ -154,7 +165,7 @@ export async function GET(request: NextRequest) {
       rawBusyByEmail[r.value.email] = r.value.busy;
       for (const b of r.value.busy) allBusy.push(b);
     } else {
-      console.error("[booking/availability] Token fetch failed:", r.reason);
+      console.error("[booking/availability] Token fetch failed");
     }
   }
 
@@ -170,7 +181,6 @@ export async function GET(request: NextRequest) {
 
   if (process.env.NODE_ENV === "development") {
     await writeTempDump(dateParam, {
-      rawBusyByEmail,
       mergedBusy: mergeIntervals(allBusy),
       slots: slots.map((s) => ({ start: s.start, end: s.end })),
       queryWindow: {
