@@ -13,28 +13,25 @@ export interface Slot {
   end: string;
 }
 
-/** Get UTC offset in hours for a timezone at a given date (noon UTC). Falls back to UTC on invalid timezone. */
+/** Get UTC offset in hours for a timezone at a given date (noon UTC). Falls back to UTC if timezone is invalid. */
 function getTimezoneOffsetHours(dateStr: string, tz: string): number {
-  const d = new Date(`${dateStr}T12:00:00.000Z`);
-  let safeТz = tz;
   try {
-    new Intl.DateTimeFormat("en-CA", { timeZone: tz });
+    const d = new Date(`${dateStr}T12:00:00.000Z`);
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone: tz,
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    });
+    const parts = formatter.formatToParts(d);
+    const hour = parseInt(parts.find((p) => p.type === "hour")?.value ?? "0", 10);
+    const minute = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0", 10);
+    const localMinutesFromNoon = hour * 60 + minute - 12 * 60;
+    return localMinutesFromNoon / 60;
   } catch {
-    console.error("[booking/availability] Invalid timezone, falling back to UTC");
-    safeТz = "UTC";
+    return 0; // Fall back to UTC for invalid timezone
   }
-  const formatter = new Intl.DateTimeFormat("en-CA", {
-    timeZone: safeТz,
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  });
-  const parts = formatter.formatToParts(d);
-  const hour = parseInt(parts.find((p) => p.type === "hour")?.value ?? "0", 10);
-  const minute = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0", 10);
-  const localMinutesFromNoon = hour * 60 + minute - 12 * 60;
-  return localMinutesFromNoon / 60;
 }
 
 /** Start of dateStr (YYYY-MM-DD) in timezone tz, as UTC Date. */

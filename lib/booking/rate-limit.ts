@@ -1,49 +1,49 @@
 /**
- * In-memory sliding-window rate limiter.
- *
- * Note: Each serverless instance has its own memory, so this is per-instance.
- * It provides meaningful protection against bursts from a single IP hitting the
- * same instance, and is safe to use without external infrastructure.
+ * In-memory rate limiter for booking API routes.
+ * For production on Vercel serverless, consider Upstash Redis for cross-instance limits.
  */
 
-interface RateLimitEntry {
-  count: number;
-  resetAt: number;
+const store = new Map<string, { count: number; resetAt: number }>();
+
+function getClientIp(request: Request): string {
+  const forwarded = request.headers.get("x-forwarded-for");
+  const realIp = request.headers.get("x-real-ip");
+  return forwarded?.split(",")[0]?.trim() ?? realIp ?? "unknown";
 }
 
-const store = new Map<string, RateLimitEntry>();
-
-export interface RateLimitResult {
-  allowed: boolean;
-  remaining: number;
-}
-
+/**
+ * Check if request is within rate limit. Returns true if allowed, false if exceeded.
+ */
 export function checkRateLimit(
   key: string,
-  maxRequests: number,
+  limit: number,
   windowMs: number
-): RateLimitResult {
+): boolean {
   const now = Date.now();
   const entry = store.get(key);
 
-  if (!entry || now >= entry.resetAt) {
+  if (!entry) {
     store.set(key, { count: 1, resetAt: now + windowMs });
-    return { allowed: true, remaining: maxRequests - 1 };
+    return true;
   }
 
-  if (entry.count >= maxRequests) {
-    return { allowed: false, remaining: 0 };
+  if (now >= entry.resetAt) {
+    store.set(key, { count: 1, resetAt: now + windowMs });
+    return true;
   }
 
-  entry.count++;
-  return { allowed: true, remaining: maxRequests - entry.count };
+  if (entry.count >= limit) {
+    return false;
+  }
+
+  entry.count += 1;
+  return true;
 }
 
-export function getClientIp(request: Request): string {
-  const forwarded = (request.headers as Headers).get("x-forwarded-for");
-  return (
-    forwarded?.split(",")[0]?.trim() ??
-    (request.headers as Headers).get("x-real-ip") ??
-    "unknown"
-  );
+/**
+ * Rate limit key for a request (IP-based).
+ */
+export function getRateLimitKey(request: Request, prefix: string): string {
+  const ip = getClientIp(request);
+  return `${prefix}:${ip}`;
 }

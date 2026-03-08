@@ -3,7 +3,7 @@
  * ?date=YYYY-MM-DD&tz=America/Los_Angeles&duration=30
  *
  * Fetches busy blocks from all connected calendars, merges them, returns free slots.
- * In development, writes raw calendar data to /temp for verification.
+ * In development, writes raw calendar data to /temp for verification (PII excluded).
  */
 
 import { createClient } from "@supabase/supabase-js";
@@ -20,9 +20,13 @@ import {
   mergeIntervals,
   type Interval,
 } from "@/lib/booking/availability";
-import { checkRateLimit, getClientIp } from "@/lib/booking/rate-limit";
+import {
+  checkRateLimit,
+  getRateLimitKey,
+} from "@/lib/booking/rate-limit";
 
 const MAX_DAYS_AHEAD = 90;
+const RATE_LIMIT_PER_MIN = 20;
 const DEFAULT_START_HOUR = parseInt(process.env.BOOKING_START_HOUR ?? "9", 10);
 const DEFAULT_END_HOUR = parseInt(process.env.BOOKING_END_HOUR ?? "17", 10);
 const DEFAULT_HOST_TZ = process.env.BOOKING_TIMEZONE ?? "America/Los_Angeles";
@@ -32,15 +36,10 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const VALID_TZ = new Set([
   "America/Los_Angeles",
   "America/Denver",
-  "America/Phoenix",
   "America/Chicago",
   "America/New_York",
   "America/Anchorage",
-  "America/Puerto_Rico",
   "Pacific/Honolulu",
-  "Pacific/Guam",
-  "Pacific/Saipan",
-  "Pacific/Pago_Pago",
   "UTC",
   "Europe/London",
   "Europe/Paris",
@@ -62,15 +61,14 @@ async function writeTempDump(
     const filename = `booking-calendar-${dateStr}.json`;
     const filepath = join(tempDir, filename);
     await writeFile(filepath, JSON.stringify(data, null, 2), "utf-8");
-  } catch (err) {
-    console.error("[booking/availability] Failed to write temp dump:", err);
+  } catch {
+    console.error("[booking/availability] Failed to write temp dump");
   }
 }
 
 export async function GET(request: NextRequest) {
-  const ip = getClientIp(request);
-  const { allowed } = checkRateLimit(`availability:${ip}`, 20, 60 * 1000);
-  if (!allowed) {
+  const key = getRateLimitKey(request, "availability");
+  if (!checkRateLimit(key, RATE_LIMIT_PER_MIN, 60 * 1000)) {
     return NextResponse.json(
       { error: "Too many requests. Please try again later." },
       { status: 429 }
@@ -148,19 +146,22 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ slots: [] });
   }
 
+  const rawBusyByEmail: Record<string, { start: string; end: string }[]> = {};
   const allBusy: Interval[] = [];
 
   const results = await Promise.allSettled(
     tokens.map(async (row) => {
       const accessToken = await getAccessToken(row.refresh_token);
       const busy = await getFreeBusy(accessToken, timeMin, timeMax);
-      return busy;
+      return { email: row.email ?? row.id, busy };
     })
   );
 
-  for (const r of results) {
+  for (let i = 0; i < results.length; i++) {
+    const r = results[i];
     if (r.status === "fulfilled") {
-      for (const b of r.value) allBusy.push(b);
+      rawBusyByEmail[r.value.email] = r.value.busy;
+      for (const b of r.value.busy) allBusy.push(b);
     } else {
       console.error("[booking/availability] Token fetch failed");
     }
