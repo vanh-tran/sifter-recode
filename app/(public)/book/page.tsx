@@ -2,12 +2,12 @@
 
 /**
  * Cal.com-like booking page.
- * UI only — availability fetch will be wired next.
+ * Fetches real availability from connected Google Calendars.
  */
 
-import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect, type CSSProperties, type FormEvent } from "react";
+import { useState, useEffect, useCallback, type CSSProperties, type FormEvent } from "react";
+import LandingHeader from "@/app/components/landing-page/LandingHeader";
 import {
   ChevronLeft,
   ChevronRight,
@@ -16,44 +16,41 @@ import {
   Globe,
   Check,
   UserPlus,
+  Loader2,
 } from "lucide-react";
 
 const HOST_NAME = "Jesse";
-const MEETING_TITLE = "30min meeting";
+const MEETING_TITLE = "Meeting with Sifter team";
 
 const DURATIONS = [15, 30, 45, 60] as const;
 
 const TIMEZONES = [
-  { value: "America/Los_Angeles", label: "Pacific Time" },
-  { value: "America/Denver", label: "Mountain Time" },
-  { value: "America/Chicago", label: "Central Time" },
-  { value: "America/New_York", label: "Eastern Time" },
-  { value: "America/Anchorage", label: "Alaska Time" },
-  { value: "Pacific/Honolulu", label: "Hawaii Time" },
+  { value: "America/Los_Angeles", label: "Pacific Time (Los Angeles)" },
+  { value: "America/Denver", label: "Mountain Time (Denver)" },
+  { value: "America/Phoenix", label: "Mountain Time - Arizona (Phoenix)" },
+  { value: "America/Chicago", label: "Central Time (Chicago)" },
+  { value: "America/New_York", label: "Eastern Time (New York)" },
+  { value: "America/Anchorage", label: "Alaska Time (Anchorage)" },
+  { value: "Pacific/Honolulu", label: "Hawaii Time (Honolulu)" },
+  { value: "America/Puerto_Rico", label: "Atlantic Time (Puerto Rico)" },
+  { value: "Pacific/Guam", label: "Chamorro Time (Guam)" },
+  { value: "Pacific/Saipan", label: "Chamorro Time (Saipan)" },
+  { value: "Pacific/Pago_Pago", label: "Samoa Time (American Samoa)" },
   { value: "UTC", label: "UTC" },
-  { value: "Europe/London", label: "London" },
-  { value: "Europe/Paris", label: "Paris" },
-  { value: "Asia/Tokyo", label: "Tokyo" },
-  { value: "Australia/Sydney", label: "Sydney" },
-];
+]
 
-// Mock time slots for UI (9am–5pm in 30min chunks). Will be replaced by API.
-function getMockSlots(date: Date, tz: string, use24h: boolean): string[] {
-  const slots: string[] = [];
-  for (let h = 9; h < 17; h++) {
-    for (let m = 0; m < 60; m += 30) {
-      const d = new Date(date);
-      d.setHours(h, m, 0, 0);
-      const t = d.toLocaleTimeString(use24h ? "en-GB" : "en-US", {
-        timeZone: tz,
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: !use24h,
-      });
-      slots.push(t);
-    }
-  }
-  return slots;
+interface Slot {
+  start: string;
+  end: string;
+}
+
+function formatSlotTime(isoStart: string, tz: string, use24h: boolean): string {
+  return new Date(isoStart).toLocaleTimeString(use24h ? "en-GB" : "en-US", {
+    timeZone: tz,
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: !use24h,
+  });
 }
 
 function getDaysInMonth(year: number, month: number): Date[] {
@@ -106,7 +103,10 @@ export default function BookPage() {
     d.setHours(0, 0, 0, 0);
     return d;
   });
-  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
+  const [slots, setSlots] = useState<Slot[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [slotsError, setSlotsError] = useState<string | null>(null);
   const [duration, setDuration] = useState(30);
   const [timezone, setTimezone] = useState("America/Los_Angeles");
   const [use24h, setUse24h] = useState(false);
@@ -131,9 +131,36 @@ export default function BookPage() {
 
   const days = getDaysInMonth(viewDate.getFullYear(), viewDate.getMonth());
 
-  const slots = selectedDate
-    ? getMockSlots(selectedDate, timezone, use24h)
-    : [];
+  const fetchSlots = useCallback(async () => {
+    if (!selectedDate) return;
+    const dateStr = selectedDate.toISOString().slice(0, 10);
+    setSlotsLoading(true);
+    setSlotsError(null);
+    try {
+      const res = await fetch(
+        `/api/booking/availability?date=${encodeURIComponent(dateStr)}&tz=${encodeURIComponent(timezone)}&duration=${duration}`
+      );
+      const data = (await res.json()) as { slots?: Slot[]; error?: string };
+      if (!res.ok) {
+        throw new Error(data.error ?? "Failed to fetch availability");
+      }
+      setSlots(data.slots ?? []);
+    } catch (err) {
+      setSlotsError(err instanceof Error ? err.message : "Failed to fetch availability");
+      setSlots([]);
+    } finally {
+      setSlotsLoading(false);
+    }
+  }, [selectedDate, timezone, duration]);
+
+  useEffect(() => {
+    if (selectedDate && !selectedSlot) {
+      fetchSlots();
+    } else {
+      setSlots([]);
+      setSlotsError(null);
+    }
+  }, [selectedDate, selectedSlot, fetchSlots]);
 
   const prevMonth = () => {
     setViewDate((d) => new Date(d.getFullYear(), d.getMonth() - 1));
@@ -149,11 +176,15 @@ export default function BookPage() {
     a.getDate() === b.getDate();
 
   const isToday = (d: Date) => isSameDay(d, today);
+  const isPastDate = (d: Date) => {
+    const dStart = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    return dStart.getTime() < today.getTime();
+  };
   const isSelected = (d: Date) => selectedDate && isSameDay(d, selectedDate);
   const isCurrentMonth = (d: Date) =>
     d.getMonth() === viewDate.getMonth();
 
-  const handleSlotClick = (slot: string) => {
+  const handleSlotClick = (slot: Slot) => {
     setSelectedSlot(slot);
   };
 
@@ -162,18 +193,39 @@ export default function BookPage() {
     setFormName("");
     setFormEmail("");
     setFormNotes("");
+    setStatus("idle");
+    setSlotsError(null);
   };
 
   const handleFormSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!selectedSlot) return;
     setStatus("loading");
-    // TODO: POST to /api/booking/events
-    await new Promise((r) => setTimeout(r, 800));
-    setStatus("success");
-    setFormName("");
-    setFormEmail("");
-    setFormNotes("");
-    setSelectedSlot(null);
+    try {
+      const res = await fetch("/api/booking/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          start: selectedSlot.start,
+          end: selectedSlot.end,
+          attendeeName: formName,
+          attendeeEmail: formEmail,
+          notes: formNotes || undefined,
+        }),
+      });
+      const data = (await res.json()) as { success?: boolean; error?: string };
+      if (!res.ok) {
+        throw new Error(data.error ?? "Failed to book");
+      }
+      setStatus("success");
+      setFormName("");
+      setFormEmail("");
+      setFormNotes("");
+      setSelectedSlot(null);
+    } catch (err) {
+      setStatus("error");
+      setSlotsError(err instanceof Error ? err.message : "Booking failed");
+    }
   };
 
   const isConfirmationView = !!selectedSlot;
@@ -216,10 +268,8 @@ export default function BookPage() {
 
   if (status === "success") {
     return (
-      <div className="landing-page min-h-screen flex flex-col relative">
-        <Link href="/" className="absolute left-6 top-6 z-10 block" aria-label="Sifter home">
-          <Image src="/Sifter_Dark_Logo.png" alt="Sifter" width={120} height={32} className="h-8 w-auto" priority />
-        </Link>
+      <div className="landing-page min-h-screen flex flex-col">
+        <LandingHeader />
         <div className="flex-1 flex items-center justify-center px-6">
           <div className="max-w-md w-full text-center space-y-6">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-green-100 text-green-600">
@@ -251,22 +301,8 @@ export default function BookPage() {
   }
 
   return (
-    <div className="landing-page min-h-screen flex flex-col relative">
-      {/* Logo top-left — matches contact page */}
-      <Link href="/" className="absolute left-6 top-6 z-10 block" aria-label="Sifter home">
-        <Image src="/Sifter_Dark_Logo.png" alt="Sifter" width={120} height={32} className="h-8 w-auto" priority />
-      </Link>
-
-      {/* Links top-right — matches contact page */}
-      <nav className="absolute right-6 top-6 z-10 flex items-center gap-4">
-        <Link href="/contact" className="text-sm font-medium text-[#171717] hover:opacity-80 transition-opacity">
-          Contact
-        </Link>
-        <Link href="/login" className="text-sm font-medium text-[#171717] hover:opacity-80 transition-opacity">
-          Login
-        </Link>
-      </nav>
-
+    <div className="landing-page min-h-screen flex flex-col">
+      <LandingHeader />
       {/* Centered card — keeps a stable shell height across all 3 stages */}
       <div className="flex-1 flex items-center justify-center px-4 sm:px-6 py-16 overflow-y-auto min-h-0">
         <div
@@ -294,7 +330,8 @@ export default function BookPage() {
                       <div className="flex items-center gap-2 text-slate-600">
                         <Clock className="w-4 h-4 shrink-0" />
                         <span className="text-sm">
-                          {formatSelectedDateLocal(selectedDate)} at {selectedSlot}
+                          {formatSelectedDateLocal(selectedDate)} at{" "}
+                          {formatSlotTime(selectedSlot.start, timezone, use24h)}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-slate-600">
@@ -316,6 +353,11 @@ export default function BookPage() {
 
               <div className="p-6 lg:p-8 flex flex-col lg:w-[460px] shrink-0 overflow-y-auto">
                 <form onSubmit={handleFormSubmit} className="flex flex-col flex-1 space-y-4">
+                  {status === "error" && slotsError && (
+                    <div className="rounded-md p-3 text-sm bg-red-50 text-red-700">
+                      {slotsError}
+                    </div>
+                  )}
                   <div>
                     <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-1">
                       Your name <span className="text-red-500">*</span>
@@ -487,24 +529,30 @@ export default function BookPage() {
                         {d}
                       </div>
                     ))}
-                    {days.map((d) => (
-                      <button
-                        key={d.toISOString()}
-                        type="button"
-                        onClick={() => setSelectedDate(new Date(d))}
-                        className={`aspect-square flex items-center justify-center text-sm rounded-md transition-colors ${
-                          !isCurrentMonth(d)
-                            ? "text-slate-300"
-                            : isSelected(d)
-                              ? "bg-[#171717] text-white"
-                              : isToday(d)
-                                ? "border border-[#171717] text-[#171717] hover:bg-slate-50"
-                                : "text-slate-700 hover:bg-slate-100"
-                        }`}
-                      >
-                        {d.getDate()}
-                      </button>
-                    ))}
+                    {days.map((d) => {
+                      const past = isPastDate(d);
+                      return (
+                        <button
+                          key={d.toISOString()}
+                          type="button"
+                          onClick={() => !past && setSelectedDate(new Date(d))}
+                          disabled={past}
+                          className={`aspect-square flex items-center justify-center text-sm rounded-md transition-colors ${
+                            past
+                              ? "text-slate-300 cursor-not-allowed"
+                              : !isCurrentMonth(d)
+                                ? "text-slate-300"
+                                : isSelected(d)
+                                  ? "bg-[#171717] text-white"
+                                  : isToday(d)
+                                    ? "border border-[#171717] text-[#171717] hover:bg-slate-50"
+                                    : "text-slate-700 hover:bg-slate-100"
+                          }`}
+                        >
+                          {d.getDate()}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -549,18 +597,31 @@ export default function BookPage() {
                           {formatSelectedDateLocal(selectedDate)}
                         </p>
                         <div className="flex-1 min-h-0 overflow-visible lg:overflow-y-auto pt-3 pb-4 overscroll-contain">
-                          <div className="grid grid-cols-2 gap-2 pb-2">
-                            {slots.map((slot) => (
-                              <button
-                                key={slot}
-                                type="button"
-                                onClick={() => handleSlotClick(slot)}
-                                className="px-4 py-3 sm:py-2 text-sm font-medium text-slate-700 border border-slate-300 rounded-md hover:border-[#171717] hover:bg-slate-50 transition-colors touch-manipulation"
-                              >
-                                {slot}
-                              </button>
-                            ))}
-                          </div>
+                          {slotsLoading ? (
+                            <div className="flex items-center gap-2 text-slate-500">
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              <span className="text-sm">Loading availability…</span>
+                            </div>
+                          ) : slotsError ? (
+                            <p className="text-sm text-red-600">{slotsError}</p>
+                          ) : slots.length === 0 ? (
+                            <p className="text-sm text-slate-500">
+                              No slots available for this date.
+                            </p>
+                          ) : (
+                            <div className="grid grid-cols-2 gap-2 pb-2">
+                              {slots.map((slot) => (
+                                <button
+                                  key={slot.start}
+                                  type="button"
+                                  onClick={() => handleSlotClick(slot)}
+                                  className="px-4 py-3 sm:py-2 text-sm font-medium text-slate-700 border border-slate-300 rounded-md hover:border-[#171717] hover:bg-slate-50 transition-colors touch-manipulation"
+                                >
+                                  {formatSlotTime(slot.start, timezone, use24h)}
+                                </button>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}

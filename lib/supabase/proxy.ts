@@ -56,6 +56,8 @@ export async function updateSession(request: NextRequest) {
     "/auth",
     "/auth/callback",
     "/auth/auth-code-error",
+    "/api/booking/availability",
+    "/api/booking/events",
     // /admin-booking and /api/booking/oauth/* require auth — not in publicPaths
   ];
   if (!user && !publicPaths.includes(pathname)) {

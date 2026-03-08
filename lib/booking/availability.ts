@@ -13,25 +13,21 @@ export interface Slot {
   end: string;
 }
 
-/** Get UTC offset in hours for a timezone at a given date (noon UTC). Falls back to UTC if timezone is invalid. */
+/** Get UTC offset in hours for a timezone at a given date (noon UTC). */
 function getTimezoneOffsetHours(dateStr: string, tz: string): number {
-  try {
-    const d = new Date(`${dateStr}T12:00:00.000Z`);
-    const formatter = new Intl.DateTimeFormat("en-CA", {
-      timeZone: tz,
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false,
-    });
-    const parts = formatter.formatToParts(d);
-    const hour = parseInt(parts.find((p) => p.type === "hour")?.value ?? "0", 10);
-    const minute = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0", 10);
-    const localMinutesFromNoon = hour * 60 + minute - 12 * 60;
-    return localMinutesFromNoon / 60;
-  } catch {
-    return 0; // Fall back to UTC for invalid timezone
-  }
+  const d = new Date(`${dateStr}T12:00:00.000Z`);
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: tz,
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+  const parts = formatter.formatToParts(d);
+  const hour = parseInt(parts.find((p) => p.type === "hour")?.value ?? "0", 10);
+  const minute = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0", 10);
+  const localMinutesFromNoon = hour * 60 + minute - 12 * 60;
+  return localMinutesFromNoon / 60;
 }
 
 /** Start of dateStr (YYYY-MM-DD) in timezone tz, as UTC Date. */

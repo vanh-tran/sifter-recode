@@ -3,35 +3,24 @@
  * Body: { start, end, attendeeName, attendeeEmail, notes? }
  *
  * Creates a calendar event on the primary token's calendar.
- * Re-validates slot is still free before creating to reduce double-booking.
+ *
+ * TODO: Add rate limiting (e.g. 3 req/min per IP) to prevent spam.
+ * TODO: Optionally re-validate slot is still free before creating to reduce double-booking.
  */
 
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import {
   getAccessToken,
-  getFreeBusy,
   createCalendarEvent,
 } from "@/lib/booking/google-calendar";
-import {
-  checkRateLimit,
-  getRateLimitKey,
-} from "@/lib/booking/rate-limit";
 
 const MAX_DAYS_AHEAD = 90;
 const MAX_NAME_LENGTH = 200;
 const MAX_NOTES_LENGTH = 2000;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const RATE_LIMIT_PER_MIN = 3;
 
 export async function POST(request: NextRequest) {
-  const key = getRateLimitKey(request, "events");
-  if (!checkRateLimit(key, RATE_LIMIT_PER_MIN, 60 * 1000)) {
-    return NextResponse.json(
-      { error: "Too many requests. Please try again later." },
-      { status: 429 }
-    );
-  }
   let body: unknown;
   try {
     body = await request.json();
@@ -128,21 +117,6 @@ export async function POST(request: NextRequest) {
 
   try {
     const accessToken = await getAccessToken(primaryRow.refresh_token);
-
-    // Re-validate slot is still free before creating (reduces double-booking risk)
-    const busy = await getFreeBusy(accessToken, startDate, endDate);
-    const slotOverlaps = busy.some((b) => {
-      const bStart = new Date(b.start).getTime();
-      const bEnd = new Date(b.end).getTime();
-      return startDate.getTime() < bEnd && endDate.getTime() > bStart;
-    });
-    if (slotOverlaps) {
-      return NextResponse.json(
-        { error: "This time slot is no longer available. Please choose another." },
-        { status: 409 }
-      );
-    }
-
     const result = await createCalendarEvent(accessToken, {
       start: startDate,
       end: endDate,
@@ -156,8 +130,8 @@ export async function POST(request: NextRequest) {
       eventId: result.eventId,
       meetLink: result.meetLink,
     });
-  } catch {
-    console.error("[booking/events] Create failed");
+  } catch (err) {
+    console.error("[booking/events] Create failed:", err);
     return NextResponse.json(
       { error: "Failed to create event" },
       { status: 500 }
