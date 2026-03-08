@@ -22,7 +22,7 @@ import {
 const HOST_NAME = "Jesse";
 const MEETING_TITLE = "Meeting with Sifter team";
 
-const DURATIONS = [15, 30, 45, 60] as const;
+const DURATIONS = [30] as const;
 
 const TIMEZONES = [
   { value: "America/Los_Angeles", label: "Pacific Time (Los Angeles)" },
