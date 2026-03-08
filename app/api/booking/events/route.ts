@@ -3,17 +3,17 @@
  * Body: { start, end, attendeeName, attendeeEmail, notes? }
  *
  * Creates a calendar event on the primary token's calendar.
- *
- * TODO: Add rate limiting (e.g. 3 req/min per IP) to prevent spam.
- * TODO: Optionally re-validate slot is still free before creating to reduce double-booking.
+ * Re-validates slot availability immediately before creating to reduce double-booking.
  */
 
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import {
   getAccessToken,
+  getFreeBusy,
   createCalendarEvent,
 } from "@/lib/booking/google-calendar";
+import { checkRateLimit, getClientIp } from "@/lib/booking/rate-limit";
 
 const MAX_DAYS_AHEAD = 90;
 const MAX_NAME_LENGTH = 200;
@@ -21,6 +21,15 @@ const MAX_NOTES_LENGTH = 2000;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request);
+  const { allowed } = checkRateLimit(`events:${ip}`, 3, 60 * 1000);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429 }
+    );
+  }
+
   let body: unknown;
   try {
     body = await request.json();
@@ -117,12 +126,28 @@ export async function POST(request: NextRequest) {
 
   try {
     const accessToken = await getAccessToken(primaryRow.refresh_token);
+
+    const busyIntervals = await getFreeBusy(accessToken, startDate, endDate);
+    const slotStartMs = startDate.getTime();
+    const slotEndMs = endDate.getTime();
+    const isConflict = busyIntervals.some((b) => {
+      const bStart = new Date(b.start).getTime();
+      const bEnd = new Date(b.end).getTime();
+      return slotStartMs < bEnd && slotEndMs > bStart;
+    });
+    if (isConflict) {
+      return NextResponse.json(
+        { error: "This time slot is no longer available. Please choose another." },
+        { status: 409 }
+      );
+    }
+
     const result = await createCalendarEvent(accessToken, {
       start: startDate,
       end: endDate,
       attendeeEmail,
       attendeeName,
-      summary: "30min meeting",
+      summary: "Meeting with Sifter team",
       notes,
     });
     return NextResponse.json({
@@ -130,8 +155,8 @@ export async function POST(request: NextRequest) {
       eventId: result.eventId,
       meetLink: result.meetLink,
     });
-  } catch (err) {
-    console.error("[booking/events] Create failed:", err);
+  } catch {
+    console.error("[booking/events] Create failed");
     return NextResponse.json(
       { error: "Failed to create event" },
       { status: 500 }

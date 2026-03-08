@@ -4,8 +4,6 @@
  *
  * Fetches busy blocks from all connected calendars, merges them, returns free slots.
  * In development, writes raw calendar data to /temp for verification.
- *
- * TODO: Add rate limiting (e.g. 20 req/min per IP) to prevent abuse.
  */
 
 import { createClient } from "@supabase/supabase-js";
@@ -15,7 +13,6 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   getAccessToken,
   getFreeBusy,
-  type BusyInterval,
 } from "@/lib/booking/google-calendar";
 import {
   getAvailabilityQueryWindow,
@@ -23,6 +20,7 @@ import {
   mergeIntervals,
   type Interval,
 } from "@/lib/booking/availability";
+import { checkRateLimit, getClientIp } from "@/lib/booking/rate-limit";
 
 const MAX_DAYS_AHEAD = 90;
 const DEFAULT_START_HOUR = parseInt(process.env.BOOKING_START_HOUR ?? "9", 10);
@@ -34,10 +32,15 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const VALID_TZ = new Set([
   "America/Los_Angeles",
   "America/Denver",
+  "America/Phoenix",
   "America/Chicago",
   "America/New_York",
   "America/Anchorage",
+  "America/Puerto_Rico",
   "Pacific/Honolulu",
+  "Pacific/Guam",
+  "Pacific/Saipan",
+  "Pacific/Pago_Pago",
   "UTC",
   "Europe/London",
   "Europe/Paris",
@@ -48,7 +51,6 @@ const VALID_TZ = new Set([
 async function writeTempDump(
   dateStr: string,
   data: {
-    rawBusyByEmail: Record<string, BusyInterval[]>;
     mergedBusy: Interval[];
     slots: { start: string; end: string }[];
     queryWindow: { timeMin: string; timeMax: string };
@@ -66,6 +68,15 @@ async function writeTempDump(
 }
 
 export async function GET(request: NextRequest) {
+  const ip = getClientIp(request);
+  const { allowed } = checkRateLimit(`availability:${ip}`, 20, 60 * 1000);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429 }
+    );
+  }
+
   const dateParam = request.nextUrl.searchParams.get("date");
   const tzParam = request.nextUrl.searchParams.get("tz");
   const durationParam = request.nextUrl.searchParams.get("duration");
@@ -137,24 +148,21 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ slots: [] });
   }
 
-  const rawBusyByEmail: Record<string, BusyInterval[]> = {};
   const allBusy: Interval[] = [];
 
   const results = await Promise.allSettled(
     tokens.map(async (row) => {
       const accessToken = await getAccessToken(row.refresh_token);
       const busy = await getFreeBusy(accessToken, timeMin, timeMax);
-      return { email: row.email ?? row.id, busy };
+      return busy;
     })
   );
 
-  for (let i = 0; i < results.length; i++) {
-    const r = results[i];
+  for (const r of results) {
     if (r.status === "fulfilled") {
-      rawBusyByEmail[r.value.email] = r.value.busy;
-      for (const b of r.value.busy) allBusy.push(b);
+      for (const b of r.value) allBusy.push(b);
     } else {
-      console.error("[booking/availability] Token fetch failed:", r.reason);
+      console.error("[booking/availability] Token fetch failed");
     }
   }
 
@@ -170,7 +178,6 @@ export async function GET(request: NextRequest) {
 
   if (process.env.NODE_ENV === "development") {
     await writeTempDump(dateParam, {
-      rawBusyByEmail,
       mergedBusy: mergeIntervals(allBusy),
       slots: slots.map((s) => ({ start: s.start, end: s.end })),
       queryWindow: {

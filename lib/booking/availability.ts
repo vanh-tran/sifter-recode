@@ -13,11 +13,18 @@ export interface Slot {
   end: string;
 }
 
-/** Get UTC offset in hours for a timezone at a given date (noon UTC). */
+/** Get UTC offset in hours for a timezone at a given date (noon UTC). Falls back to UTC on invalid timezone. */
 function getTimezoneOffsetHours(dateStr: string, tz: string): number {
   const d = new Date(`${dateStr}T12:00:00.000Z`);
+  let safeТz = tz;
+  try {
+    new Intl.DateTimeFormat("en-CA", { timeZone: tz });
+  } catch {
+    console.error("[booking/availability] Invalid timezone, falling back to UTC");
+    safeТz = "UTC";
+  }
   const formatter = new Intl.DateTimeFormat("en-CA", {
-    timeZone: tz,
+    timeZone: safeТz,
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
