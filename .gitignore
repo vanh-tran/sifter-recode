@@ -42,7 +42,9 @@ next-env.d.ts
 
 # documentation
 /docs
-/AI_AGENT_START_HERE
 
 # cursor
 .cursor
+
+# temp
+/temp
