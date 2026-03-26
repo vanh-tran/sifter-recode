@@ -31,5 +31,13 @@ export type SifterEvents = {
     };
   };
 
+  'sifter/document.ocr.complete': {
+    data: {
+      orgId: string;
+      documentId: string;
+      mongodbDocumentId: string;
+    };
+  };
+
   'sifter/pipeline.health': { data: Record<string, never> };
 };
