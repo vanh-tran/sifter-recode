@@ -1,24 +1,123 @@
 'use client';
 
-import { useAuth } from '@/app/components/AuthProvider';
-import { useOrg } from '@/app/components/OrgProvider';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import Header from '@/app/components/Header';
+import StatsBar from '@/app/components/dashboard/StatsBar';
+import DashboardInvoiceList from '@/app/components/dashboard/DashboardInvoiceList';
+import { fetchDashboardStats } from '@/lib/api/dashboard';
+import { fetchInvoices } from '@/lib/api/invoices';
+import type { InvoiceFilter } from '@/lib/api/invoices';
+
+type Tab = 'action_needed' | 'reviewing' | 'cleared';
+
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'action_needed', label: 'Action Needed' },
+  { id: 'reviewing', label: 'Reviewing' },
+  { id: 'cleared', label: 'Cleared' },
+];
 
 export default function DashboardPage() {
-  const { user } = useAuth();
-  const orgId = useOrg();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const rawTab = searchParams.get('tab') as Tab | null;
+  const activeTab: Tab = rawTab && TABS.some((t) => t.id === rawTab) ? rawTab : 'action_needed';
+
+  const tagFilter = searchParams.get('tag') ?? undefined;
+
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ['dashboard-stats'],
+    queryFn: fetchDashboardStats,
+  });
+
+  const { data: invoicesData, isLoading: invoicesLoading } = useQuery({
+    queryKey: ['dashboard-invoices', activeTab, tagFilter],
+    queryFn: () =>
+      fetchInvoices(activeTab as InvoiceFilter, 0, 25, {
+        tag: tagFilter,
+        sort: 'overcharge_desc',
+      }),
+  });
+
+  const handleTabChange = (tab: Tab) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', tab);
+    params.delete('tag');
+    router.push(`/dashboard?${params.toString()}`);
+  };
+
+  const handleTagClick = (findingType: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tag', findingType);
+    router.push(`/dashboard?${params.toString()}`);
+  };
 
   return (
     <>
-      <Header
-        title="Dashboard"
-        subtitle={`Welcome back, ${user?.user_metadata?.full_name || user?.email}`}
-      />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="rounded-lg border border-brand-border bg-brand-surface p-6">
-          <h3 className="text-sm font-medium text-brand-muted">Organization</h3>
-          <p className="mt-1 font-mono text-xs text-brand-muted-light">{orgId}</p>
+      <Header title="Dashboard" />
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        {statsLoading ? (
+          <div className="mb-8 h-24 animate-pulse rounded-lg bg-brand-surface" />
+        ) : stats ? (
+          <StatsBar stats={stats} />
+        ) : null}
+
+        {/* Tab navigation */}
+        <div className="mb-6 border-b border-brand-border">
+          <nav className="-mb-px flex space-x-6">
+            {TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => handleTabChange(tab.id)}
+                className={`whitespace-nowrap border-b-2 pb-3 text-sm font-medium transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-brand-accent text-brand-accent'
+                    : 'border-transparent text-brand-muted hover:border-brand-border hover:text-brand-primary'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
         </div>
+
+        {/* Active tag filter badge */}
+        {tagFilter && (
+          <div className="mb-4 flex items-center gap-2">
+            <span className="text-sm text-brand-muted">Filtered by tag:</span>
+            <span className="rounded-full border border-brand-border bg-brand-surface px-3 py-1 text-xs text-brand-primary">
+              {tagFilter.replace(/_/g, ' ')}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                const params = new URLSearchParams(searchParams.toString());
+                params.delete('tag');
+                router.push(`/dashboard?${params.toString()}`);
+              }}
+              className="text-xs text-brand-muted hover:text-brand-primary"
+            >
+              Clear
+            </button>
+          </div>
+        )}
+
+        {/* Invoice list */}
+        {invoicesLoading ? (
+          <div className="h-48 animate-pulse rounded-lg bg-brand-surface" />
+        ) : invoicesData && invoicesData.invoices.length > 0 ? (
+          <DashboardInvoiceList
+            invoices={invoicesData.invoices}
+            tab={activeTab}
+            onTagClick={handleTagClick}
+          />
+        ) : (
+          <div className="flex h-48 items-center justify-center rounded-lg border border-brand-border bg-brand-surface text-brand-muted">
+            No invoices in this queue
+          </div>
+        )}
       </main>
     </>
   );
