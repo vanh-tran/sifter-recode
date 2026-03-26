@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import Header from '@/app/components/Header';
 import StatsBar from '@/app/components/dashboard/StatsBar';
 import DashboardInvoiceList from '@/app/components/dashboard/DashboardInvoiceList';
+import FindingTagFilter from '@/app/components/dashboard/FindingTagFilter';
 import { fetchDashboardStats } from '@/lib/api/dashboard';
 import { fetchInvoices } from '@/lib/api/invoices';
 import type { InvoiceFilter } from '@/lib/api/invoices';
@@ -83,26 +84,8 @@ export default function DashboardPage() {
           </nav>
         </div>
 
-        {/* Active tag filter badge */}
-        {tagFilter && (
-          <div className="mb-4 flex items-center gap-2">
-            <span className="text-sm text-brand-muted">Filtered by tag:</span>
-            <span className="rounded-full border border-brand-border bg-brand-surface px-3 py-1 text-xs text-brand-primary">
-              {tagFilter.replace(/_/g, ' ')}
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                const params = new URLSearchParams(searchParams.toString());
-                params.delete('tag');
-                router.push(`/dashboard?${params.toString()}`);
-              }}
-              className="text-xs text-brand-muted hover:text-brand-primary"
-            >
-              Clear
-            </button>
-          </div>
-        )}
+        {/* Active tag filter */}
+        <FindingTagFilter />
 
         {/* Invoice list */}
         {invoicesLoading ? (
