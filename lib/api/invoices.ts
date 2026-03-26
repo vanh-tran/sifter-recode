@@ -64,6 +64,8 @@ export interface Invoice {
   currency: string;
   status: string;
   findings_count: number;
+  finding_tags: string[];
+  overcharge_amount: number;
   filename: string;
   created_at: string;
 }
@@ -86,13 +88,20 @@ export type InvoiceFilter =
 export async function fetchInvoices(
   filter: InvoiceFilter,
   page: number = 0,
-  limit: number = 25
+  limit: number = 25,
+  opts?: { tag?: string; sort?: 'overcharge_desc' | 'created_desc' }
 ): Promise<InvoicesResponse> {
   const params = new URLSearchParams();
   params.set('limit', String(limit));
   params.set('offset', String(page * limit));
   if (filter !== 'all') {
     params.set('status', filter);
+  }
+  if (opts?.tag) {
+    params.set('tag', opts.tag);
+  }
+  if (opts?.sort) {
+    params.set('sort', opts.sort);
   }
 
   const response = await fetch(`/api/invoices?${params.toString()}`, {
