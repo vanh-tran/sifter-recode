@@ -212,3 +212,27 @@ export async function GET(
   }
 }
 
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> | { id: string } }
+) {
+  try {
+    const supabase = await createClient();
+    const authContext = await getAuthOrgContext(supabase);
+    if (!authContext) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { orgId, role } = authContext;
+    const denied = requirePermission(role, 'invoices:manage');
+    if (denied) return denied;
+    const resolvedParams = 'then' in params ? await params : params;
+    const id = resolvedParams.id;
+    let body: { ui_status?: string };
+    try { body = (await request.json()) as { ui_status?: string }; }
+    catch { return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 }); }
+    if (!body.ui_status) return NextResponse.json({ error: 'ui_status required' }, { status: 400 });
+    const { error } = await supabase
+      .from('invoices').update({ ui_status: body.ui_status, updated_at: new Date().toISOString() })
+      .eq('id', id).eq('org_id', orgId);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  } catch (e) { console.error(e); return NextResponse.json({ error: 'Internal server error' }, { status: 500 }); }
+}
