@@ -23,6 +23,15 @@ export type SifterEvents = {
     };
   };
 
+  'sifter/invoice.context_ready': {
+    data: {
+      orgId: string;
+      invoiceId: string;
+      bolDocumentIds: string[];
+      rateSheetId: string | null;
+    };
+  };
+
   'sifter/invoice.audited': {
     data: {
       orgId: string;
