@@ -32,10 +32,13 @@ export interface InvoiceDetail {
   subtotal_amount: number | null;
   tax_amount: number | null;
   total_amount: number;
+  overcharge_amount: number | null;
   payment_terms_text: string | null;
   ui_status: string;
   confidence_overall: number | null;
   is_duplicate: boolean;
+  bol_pro: string | null;
+  dispute: { id: string; disputed_finding_ids: string[]; status: string } | null;
   carrier: {
     id: string;
     name_raw: string;

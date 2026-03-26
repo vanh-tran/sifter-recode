@@ -7,6 +7,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { getAuthOrgContext } from '@/lib/server/auth-context';
+import { requirePermission } from '@/lib/server/rbac';
 import { generatePresignedUrl } from '@/lib/server/gcs-presigned';
 import { isValidUuid } from '@/lib/utils';
 import { NextRequest, NextResponse } from 'next/server';
@@ -21,7 +22,10 @@ export async function GET(
     if (!authContext) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const { orgId } = authContext;
+    const { orgId, role } = authContext;
+
+    const denied = requirePermission(role, 'invoices:read');
+    if (denied) return denied;
 
     // Handle both sync and async params (Next.js 15+ compatibility)
     const resolvedParams = 'then' in params ? await params : params;
@@ -36,6 +40,7 @@ export async function GET(
       .from('invoices')
       .select(`
         *,
+        overcharge_amount,
         carriers (
           id,
           name_raw,
@@ -83,12 +88,33 @@ export async function GET(
       console.error('Error fetching references:', referencesError);
     }
 
+    // Get BOL/PRO references for bol_pro string
+    const { data: bolProRefs } = await supabase
+      .from('invoice_references')
+      .select('ref_type, ref_value')
+      .eq('invoice_id', invoiceId)
+      .eq('org_id', orgId)
+      .in('ref_type', ['BOL', 'PRO']);
+
+    const bol_pro =
+      bolProRefs && bolProRefs.length > 0
+        ? bolProRefs.map((r) => r.ref_value).join(', ')
+        : null;
+
+    // Get dispute for this invoice
+    const { data: dispute } = await supabase
+      .from('disputes')
+      .select('id, disputed_finding_ids, status')
+      .eq('invoice_id', invoiceId)
+      .eq('org_id', orgId)
+      .maybeSingle();
+
     // Get findings
     const { data: findings, error: findingsError } = await supabase
       .from('findings')
       .select(`
         id,
-        leak_type,
+        finding_type,
         rule_id,
         severity,
         confidence,
@@ -98,6 +124,8 @@ export async function GET(
         delta_percent,
         estimated_savings,
         summary,
+        description_edited,
+        amount_edited,
         reasoning,
         evidence_json,
         proof_required,
@@ -144,11 +172,14 @@ export async function GET(
       subtotal_amount: invoice.subtotal_amount,
       tax_amount: invoice.tax_amount,
       total_amount: invoice.total_amount,
+      overcharge_amount: (invoice as Record<string, unknown>).overcharge_amount ?? null,
       payment_terms_text: invoice.payment_terms_text,
       ui_status: invoice.ui_status,
       confidence_overall: invoice.confidence_overall,
       is_duplicate: invoice.is_duplicate,
       duplicate_of_invoice_id: invoice.duplicate_of_invoice_id,
+      bol_pro,
+      dispute: dispute ?? null,
       carrier: {
         id: (invoice.carriers as any)?.id,
         name_raw: (invoice.carriers as any)?.name_raw,
@@ -163,7 +194,10 @@ export async function GET(
       },
       line_items: lineItems || [],
       references: references || [],
-      findings: findings || [],
+      findings: (findings || []).map((f) => ({
+        ...f,
+        leak_type: (f as { finding_type?: string }).finding_type,
+      })),
       created_at: invoice.created_at,
       updated_at: invoice.updated_at,
     };
