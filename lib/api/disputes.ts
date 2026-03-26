@@ -1,3 +1,12 @@
+export async function fetchDisputesList(scope: 'active' | 'resolved' | 'all' = 'active') {
+  const res = await fetch(`/api/disputes?scope=${scope}`, {
+    credentials: 'same-origin',
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new Error('Failed to load disputes');
+  return res.json();
+}
+
 export async function patchDispute(disputeId: string, body: { disputed_finding_ids: string[] }) {
   const res = await fetch(`/api/disputes/${disputeId}`, {
     method: 'PATCH',
