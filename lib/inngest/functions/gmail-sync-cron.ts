@@ -13,8 +13,7 @@ async function processMessage(
 }
 
 export const gmailSyncCron = inngest.createFunction(
-  { id: 'gmail-sync-cron', name: 'Gmail Sync Cron' },
-  { cron: '*/15 * * * *' },
+  { id: 'gmail-sync-cron', name: 'Gmail Sync Cron', triggers: [{ cron: '*/15 * * * *' }] },
   async ({ step }) => {
     const supabase = createServiceRoleClient();
 
