@@ -7,6 +7,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { getAuthOrgContext } from '@/lib/server/auth-context';
+import { requirePermission } from '@/lib/server/rbac';
 import { isValidUuid } from '@/lib/utils';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -20,7 +21,10 @@ export async function GET(
     if (!authContext) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const { orgId } = authContext;
+    const { orgId, role } = authContext;
+
+    const readDenied = requirePermission(role, 'findings:read');
+    if (readDenied) return readDenied;
 
     const resolvedParams = 'then' in params ? await params : params;
     const findingId = resolvedParams.id;
@@ -35,7 +39,7 @@ export async function GET(
       .select(
         `
         *,
-        invoices!findings_invoice_id_fkey (
+        invoices!findings_invoice_fkey (
           id,
           invoice_number,
           invoice_date,
@@ -126,7 +130,10 @@ export async function PATCH(
     if (!authContext) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const { orgId } = authContext;
+    const { orgId, role } = authContext;
+
+    const manageDenied = requirePermission(role, 'invoices:manage');
+    if (manageDenied) return manageDenied;
 
     const resolvedParams = 'then' in params ? await params : params;
     const findingId = resolvedParams.id;
@@ -207,6 +214,15 @@ export async function PATCH(
           : String(required_proof_description).slice(0, MAX_STRING_LEN);
       updateData.required_proof_description = rpd;
     }
+    if (body.description_edited !== undefined) {
+      const s = typeof body.description_edited === 'string' ? body.description_edited : null;
+      updateData.description_edited = s === null ? null : s.slice(0, 2000);
+    }
+    if (body.amount_edited !== undefined) {
+      const raw = body.amount_edited;
+      const val = raw === null || raw === '' ? null : parseFloat(String(raw));
+      updateData.amount_edited = val !== null && Number.isFinite(val) ? val : null;
+    }
 
     const finalExpected =
       'expected_amount' in updateData
@@ -239,7 +255,7 @@ export async function PATCH(
     if (updateError) {
       console.error('Error updating finding:', updateError);
       return NextResponse.json(
-        { error: 'Failed to update finding' },
+        { error: 'Internal server error' },
         { status: 500 }
       );
     }
