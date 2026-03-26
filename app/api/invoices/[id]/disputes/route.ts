@@ -7,8 +7,39 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { getAuthOrgContext } from '@/lib/server/auth-context';
+import { requirePermission } from '@/lib/server/rbac';
 import { isValidUuid } from '@/lib/utils';
 import { NextRequest, NextResponse } from 'next/server';
+
+export async function POST(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> | { id: string } }
+) {
+  try {
+    const supabase = await createClient();
+    const authContext = await getAuthOrgContext(supabase);
+    if (!authContext) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { orgId, role } = authContext;
+    const denied = requirePermission(role, 'disputes:create');
+    if (denied) return denied;
+    const resolvedParams = 'then' in params ? await params : params;
+    const invoiceId = resolvedParams.id;
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(invoiceId))
+      return NextResponse.json({ error: 'Invalid invoice ID' }, { status: 400 });
+    const { data: invoice, error: invoiceError } = await supabase
+      .from('invoices').select('id').eq('id', invoiceId).eq('org_id', orgId).single();
+    if (invoiceError || !invoice) return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
+    const { data: existing } = await supabase
+      .from('disputes').select('id, disputed_finding_ids, status, total_disputed_amount, draft_letter, recovered_amount')
+      .eq('invoice_id', invoiceId).eq('org_id', orgId).maybeSingle();
+    if (existing) return NextResponse.json({ dispute: existing, already_exists: true }, { status: 200 });
+    const { data: dispute, error: insertError } = await supabase
+      .from('disputes').insert({ org_id: orgId, invoice_id: invoiceId, status: 'draft', disputed_finding_ids: [], total_disputed_amount: 0 })
+      .select().single();
+    if (insertError || !dispute) { console.error(insertError); return NextResponse.json({ error: 'Internal server error' }, { status: 500 }); }
+    return NextResponse.json({ dispute });
+  } catch (e) { console.error(e); return NextResponse.json({ error: 'Internal server error' }, { status: 500 }); }
+}
 
 export async function GET(
   request: NextRequest,
