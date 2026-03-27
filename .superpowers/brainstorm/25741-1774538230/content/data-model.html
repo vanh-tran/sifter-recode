@@ -1,0 +1,227 @@
+<style>
+  .erd { display: flex; flex-direction: column; gap: 24px; }
+  .erd-row { display: flex; gap: 20px; align-items: flex-start; justify-content: center; flex-wrap: wrap; }
+
+  .entity { background: #161616; border: 1.5px solid #2a2a2a; border-radius: 8px; min-width: 180px; overflow: hidden; }
+  .entity.primary { border-color: #4f8ef7; }
+  .entity.secondary { border-color: #2a2a2a; }
+  .entity.storage { border-color: #444; border-style: dashed; }
+
+  .entity-header { padding: 7px 12px; font-size: 11px; font-weight: 700; letter-spacing: 0.3px; display: flex; align-items: center; gap: 6px; }
+  .entity-header.blue { background: rgba(79,142,247,0.15); color: #4f8ef7; }
+  .entity-header.gray { background: rgba(255,255,255,0.05); color: #888; }
+  .entity-header.green { background: rgba(79,207,122,0.12); color: #4fcf7a; }
+  .entity-header.orange { background: rgba(247,162,79,0.12); color: #f7a24f; }
+  .entity-header.red { background: rgba(247,79,79,0.1); color: #f77; }
+  .entity-header.purple { background: rgba(160,79,247,0.12); color: #c47cf7; }
+
+  .entity-fields { padding: 8px 12px; display: flex; flex-direction: column; gap: 4px; }
+  .field { font-size: 10px; color: #666; display: flex; align-items: center; gap: 6px; }
+  .field .fname { color: #aaa; }
+  .field .ftype { color: #555; font-style: italic; }
+  .field .fpk { font-size: 9px; color: #4f8ef7; background: rgba(79,142,247,0.1); border-radius: 3px; padding: 1px 4px; }
+  .field .ffk { font-size: 9px; color: #888; background: rgba(255,255,255,0.05); border-radius: 3px; padding: 1px 4px; }
+  .field .fkey { font-size: 9px; color: #f7a24f; background: rgba(247,162,79,0.08); border-radius: 3px; padding: 1px 4px; }
+
+  .rel-arrows { display: flex; flex-direction: column; gap: 6px; padding: 8px 12px 8px; border-top: 1px solid #1e1e1e; }
+  .rel { font-size: 10px; color: #555; display: flex; align-items: center; gap: 5px; }
+  .rel .arrow { color: #333; }
+  .rel .target { color: #666; }
+
+  .storage-note { font-size: 10px; color: #555; padding: 8px 12px; border-top: 1px solid #1e1e1e; line-height: 1.6; }
+  .storage-note span { color: #4f8ef7; }
+
+  .section-label { font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 0.8px; text-align: center; padding: 4px 0 8px; }
+
+  .connector { display: flex; align-items: center; justify-content: center; color: #333; font-size: 18px; padding: 0 4px; align-self: center; }
+
+  .legend { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; padding: 12px 16px; background: #0e0e0e; border-radius: 8px; border: 1px solid #1e1e1e; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 10px; color: #666; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+</style>
+
+<h2>Data Model</h2>
+<p class="subtitle">Key entities and relationships — Supabase (structured), GCS (files), MongoDB (OCR text)</p>
+
+<div class="erd">
+
+  <!-- Row 1: Top-level tenant -->
+  <div class="section-label">Tenant</div>
+  <div class="erd-row">
+    <div class="entity primary">
+      <div class="entity-header blue">COMPANY</div>
+      <div class="entity-fields">
+        <div class="field"><span class="fpk">PK</span><span class="fname">id</span></div>
+        <div class="field"><span class="fname">name</span></div>
+        <div class="field"><span class="fname">created_at</span></div>
+      </div>
+    </div>
+    <div class="connector">→</div>
+    <div class="entity secondary">
+      <div class="entity-header gray">USER</div>
+      <div class="entity-fields">
+        <div class="field"><span class="fpk">PK</span><span class="fname">id</span></div>
+        <div class="field"><span class="ffk">FK</span><span class="fname">company_id</span></div>
+        <div class="field"><span class="fname">email</span></div>
+        <div class="field"><span class="fname">role</span> <span class="ftype">ap_user | admin</span></div>
+      </div>
+    </div>
+    <div class="connector">→</div>
+    <div class="entity secondary">
+      <div class="entity-header gray">MAILBOX</div>
+      <div class="entity-fields">
+        <div class="field"><span class="fpk">PK</span><span class="fname">id</span></div>
+        <div class="field"><span class="ffk">FK</span><span class="fname">company_id</span></div>
+        <div class="field"><span class="fname">provider</span> <span class="ftype">gmail | outlook</span></div>
+        <div class="field"><span class="fname">email_address</span></div>
+        <div class="field"><span class="fname">oauth_tokens</span> <span class="ftype">encrypted</span></div>
+        <div class="field"><span class="fname">last_polled_at</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 2: Carrier + supporting docs -->
+  <div class="section-label">Carriers & Supporting Docs</div>
+  <div class="erd-row">
+    <div class="entity primary">
+      <div class="entity-header blue">CARRIER</div>
+      <div class="entity-fields">
+        <div class="field"><span class="fpk">PK</span><span class="fname">id</span></div>
+        <div class="field"><span class="ffk">FK</span><span class="fname">company_id</span></div>
+        <div class="field"><span class="fname">name</span></div>
+        <div class="field"><span class="fname">billing_email</span></div>
+        <div class="field"><span class="fname">billing_email_confirmed</span> <span class="ftype">bool</span></div>
+        <div class="field"><span class="fkey">IDX</span><span class="fname">company_id + name</span></div>
+      </div>
+    </div>
+    <div class="connector">→</div>
+    <div class="entity secondary">
+      <div class="entity-header gray">RATE_SHEET</div>
+      <div class="entity-fields">
+        <div class="field"><span class="fpk">PK</span><span class="fname">id</span></div>
+        <div class="field"><span class="ffk">FK</span><span class="fname">carrier_id</span></div>
+        <div class="field"><span class="fname">gcs_path</span></div>
+        <div class="field"><span class="fname">effective_date</span></div>
+        <div class="field"><span class="fname">uploaded_at</span></div>
+      </div>
+    </div>
+    <div class="connector">  </div>
+    <div class="entity secondary">
+      <div class="entity-header gray">BOL</div>
+      <div class="entity-fields">
+        <div class="field"><span class="fpk">PK</span><span class="fname">id</span></div>
+        <div class="field"><span class="ffk">FK</span><span class="fname">company_id</span></div>
+        <div class="field"><span class="fname">bol_number</span></div>
+        <div class="field"><span class="fname">pro_number</span></div>
+        <div class="field"><span class="fname">gcs_path</span></div>
+        <div class="field"><span class="fname">uploaded_at</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 3: Invoice (core) -->
+  <div class="section-label">Invoice (core)</div>
+  <div class="erd-row">
+    <div class="entity primary">
+      <div class="entity-header blue">INVOICE</div>
+      <div class="entity-fields">
+        <div class="field"><span class="fpk">PK</span><span class="fname">id</span></div>
+        <div class="field"><span class="ffk">FK</span><span class="fname">company_id</span></div>
+        <div class="field"><span class="ffk">FK</span><span class="fname">carrier_id</span></div>
+        <div class="field"><span class="ffk">FK</span><span class="fname">bol_id</span> <span class="ftype">nullable</span></div>
+        <div class="field"><span class="fname">invoice_number</span></div>
+        <div class="field"><span class="fname">invoice_date</span></div>
+        <div class="field"><span class="fname">total_amount</span></div>
+        <div class="field"><span class="fname">overcharge_amount</span></div>
+        <div class="field"><span class="fname">status</span> <span class="ftype">action_needed | reviewing | cleared</span></div>
+        <div class="field"><span class="fname">gcs_pdf_path</span></div>
+        <div class="field"><span class="fname">source</span> <span class="ftype">email | manual_upload</span></div>
+        <div class="field"><span class="fname">email_message_id</span> <span class="ftype">nullable</span></div>
+        <div class="field"><span class="fkey">IDX</span><span class="fname">company_id + invoice_number + carrier_id</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 4: Findings + Dispute -->
+  <div class="section-label">Audit Findings & Disputes</div>
+  <div class="erd-row">
+    <div class="entity green">
+      <div class="entity-header green">FINDING</div>
+      <div class="entity-fields">
+        <div class="field"><span class="fpk">PK</span><span class="fname">id</span></div>
+        <div class="field"><span class="ffk">FK</span><span class="fname">invoice_id</span></div>
+        <div class="field"><span class="fname">type</span> <span class="ftype">rate_mismatch | dup_invoice | math_error | fuel_surcharge | detention | accessorial | bol_mismatch | late_submission | unit_mismatch</span></div>
+        <div class="field"><span class="fname">description</span></div>
+        <div class="field"><span class="fname">amount</span></div>
+        <div class="field"><span class="fname">description_edited</span> <span class="ftype">nullable — AP override</span></div>
+        <div class="field"><span class="fname">amount_edited</span> <span class="ftype">nullable — AP override</span></div>
+        <div class="field"><span class="fname">source</span> <span class="ftype">deterministic | ai_audit</span></div>
+      </div>
+    </div>
+    <div class="connector">  </div>
+    <div class="entity secondary">
+      <div class="entity-header gray">PROOF_CLIP</div>
+      <div class="entity-fields">
+        <div class="field"><span class="fpk">PK</span><span class="fname">id</span></div>
+        <div class="field"><span class="ffk">FK</span><span class="fname">finding_id</span></div>
+        <div class="field"><span class="fname">gcs_path</span></div>
+        <div class="field"><span class="fname">source_doc</span> <span class="ftype">invoice | rate_sheet | bol</span></div>
+        <div class="field"><span class="fname">label</span> <span class="ftype">e.g. "Contracted rate"</span></div>
+      </div>
+    </div>
+    <div class="connector">  </div>
+    <div class="entity orange">
+      <div class="entity-header orange">DISPUTE</div>
+      <div class="entity-fields">
+        <div class="field"><span class="fpk">PK</span><span class="fname">id</span></div>
+        <div class="field"><span class="ffk">FK</span><span class="fname">invoice_id</span> <span class="ftype">unique</span></div>
+        <div class="field"><span class="fname">status</span> <span class="ftype">draft | sent | carrier_replied | resolved</span></div>
+        <div class="field"><span class="fname">disputed_finding_ids</span> <span class="ftype">array — AP selection</span></div>
+        <div class="field"><span class="fname">draft_letter</span> <span class="ftype">editable, AI-generated</span></div>
+        <div class="field"><span class="fname">total_disputed_amount</span></div>
+        <div class="field"><span class="fname">recovered_amount</span> <span class="ftype">nullable — on resolve</span></div>
+        <div class="field"><span class="fname">resolved_at</span> <span class="ftype">nullable</span></div>
+      </div>
+    </div>
+    <div class="connector">→</div>
+    <div class="entity red">
+      <div class="entity-header red">DISPUTE_MESSAGE</div>
+      <div class="entity-fields">
+        <div class="field"><span class="fpk">PK</span><span class="fname">id</span></div>
+        <div class="field"><span class="ffk">FK</span><span class="fname">dispute_id</span></div>
+        <div class="field"><span class="fname">direction</span> <span class="ftype">outbound | inbound</span></div>
+        <div class="field"><span class="fname">body</span> <span class="ftype">immutable on send</span></div>
+        <div class="field"><span class="fname">sent_at</span></div>
+        <div class="field"><span class="fname">email_message_id</span> <span class="ftype">nullable</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 5: Pipeline / Storage -->
+  <div class="section-label">Pipeline & Storage</div>
+  <div class="erd-row">
+    <div class="entity storage">
+      <div class="entity-header gray">PIPELINE_JOB <span style="color:#444;font-weight:400">(Inngest — not in DB)</span></div>
+      <div class="storage-note">
+        Phase 1: OCR + classify<br>
+        Phase 2: normalize → upsert Invoice<br>
+        Phase 3: context gather + fast checks + AI audit → upsert Findings<br>
+        <br>
+        <span>GCS</span> — raw PDFs, rate sheets, BOLs, proof clip images<br>
+        <span>MongoDB</span> — raw OCR text, extraction intermediates<br>
+        <span>Supabase</span> — all structured entities above
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:16px">
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(79,142,247,0.4);border:1px solid #4f8ef7"></div>Core / tenant entities</div>
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(79,207,122,0.2);border:1px solid #4fcf7a"></div>Audit findings</div>
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(247,162,79,0.2);border:1px solid #f7a24f"></div>Dispute</div>
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(247,79,79,0.15);border:1px solid #f77"></div>Immutable history</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#1a1a1a;border:1px dashed #444"></div>External systems</div>
+  </div>
+</div>

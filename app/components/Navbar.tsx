@@ -13,13 +13,13 @@ import {
   navigationMenuTriggerStyle,
 } from './ui/navigation-menu';
 import { cn } from '@/lib/utils';
+import ThemeToggle from '@/app/components/ThemeToggle';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard' },
   { name: 'Invoices', href: '/invoices' },
-  { name: 'Findings', href: '/findings' },
-  { name: 'Reports', href: '/reports' },
-  { name: 'Mailboxes', href: '/mailboxes' },
+  { name: 'Disputes', href: '/disputes' },
+  { name: 'Carriers', href: '/carriers' },
   { name: 'Settings', href: '/settings' },
 ];
 
@@ -53,9 +53,9 @@ export default function Navbar() {
               />
             </Link>
           </div>
-          <div className="absolute left-1/2 -translate-x-1/2 hidden sm:flex">
+          <div className="absolute left-1/2 hidden max-w-[min(100vw-12rem,42rem)] -translate-x-1/2 overflow-x-auto sm:flex">
             <NavigationMenu>
-              <NavigationMenuList className="space-x-1">
+              <NavigationMenuList className="flex-nowrap space-x-1">
                 {navigation.map((item) => {
                   const isActive =
                     pathname === item.href ||
@@ -79,7 +79,8 @@ export default function Navbar() {
               </NavigationMenuList>
             </NavigationMenu>
           </div>
-          <div className="flex items-center space-x-4 flex-shrink-0">
+          <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
+            <ThemeToggle />
             {user && (
               <>
                 <div className="relative">
@@ -93,7 +94,7 @@ export default function Navbar() {
                     <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-brand-surface border border-brand-border z-10">
                       <div className="py-1">
                         {signOutError && (
-                          <p className="px-4 py-2 text-xs text-red-600">
+                          <p className="px-4 py-2 text-xs text-brand-destructive">
                             {signOutError}
                           </p>
                         )}

@@ -40,8 +40,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# documentation
-/docs
+# documentation (ignore /docs except tracked superpowers specs — parent /docs cannot be negated)
+/docs/*
+!/docs/superpowers/
+!/docs/superpowers/specs/
+!/docs/superpowers/specs/**
 /AI_AGENT_START_HERE
 
 # cursor

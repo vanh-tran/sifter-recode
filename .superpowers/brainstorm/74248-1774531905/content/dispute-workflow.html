@@ -1,0 +1,192 @@
+<style>
+  .shell { background: #111; border: 1.5px solid #2a2a2a; border-radius: 10px; overflow: hidden; font-size: 12px; margin-bottom: 20px; }
+  .top-bar { background: #161616; border-bottom: 1px solid #2a2a2a; padding: 9px 16px; display: flex; align-items: center; gap: 10px; }
+  .back { color: #4f8ef7; font-size: 11px; }
+  .top-bar h2 { margin: 0; font-size: 13px; font-weight: 600; color: #e0e0e0; }
+  .badge { font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 700; }
+  .badge.draft { background: rgba(150,150,150,0.15); color: #999; border: 1px solid #333; }
+  .badge.sent { background: rgba(79,142,247,0.15); color: #4f8ef7; border: 1px solid rgba(79,142,247,0.3); }
+  .badge.responded { background: rgba(247,162,79,0.15); color: #f7a24f; border: 1px solid rgba(247,162,79,0.3); }
+  .badge.resolved { background: rgba(79,207,122,0.15); color: #4fcf7a; border: 1px solid rgba(79,207,122,0.3); }
+  .top-actions { margin-left: auto; display: flex; gap: 8px; }
+  .btn { font-size: 11px; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-weight: 600; border: none; }
+  .btn.primary { background: #4f8ef7; color: #fff; }
+  .btn.ghost { background: transparent; color: #888; border: 1px solid #2a2a2a; }
+  .btn.sm { font-size: 10px; padding: 3px 9px; }
+
+  .body { display: flex; }
+  .left-pane { flex: 1; border-right: 1px solid #1e1e1e; padding: 14px 16px; }
+  .right-pane { width: 240px; flex-shrink: 0; }
+
+  /* Recipient row */
+  .recipient-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #161616; border: 1px solid #2a2a2a; border-radius: 6px; margin-bottom: 10px; }
+  .recipient-row .to-label { font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: 0.05em; width: 28px; flex-shrink: 0; }
+  .recipient-email { font-size: 12px; color: #ccc; flex: 1; }
+  .recipient-note { font-size: 10px; color: #555; font-style: italic; }
+  .edit-link { font-size: 10px; color: #4f8ef7; }
+
+  /* Letter editor */
+  .letter-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #555; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; }
+  .letter-box { background: #161616; border: 1px solid #2a2a2a; border-radius: 6px; padding: 14px; font-size: 12px; color: #ccc; line-height: 1.7; min-height: 280px; font-family: inherit; }
+  .letter-box p { margin: 0 0 10px; }
+  .letter-box .editable-hint { font-size: 10px; color: #444; margin-top: 12px; font-style: italic; }
+  .letter-highlight { background: rgba(79,142,247,0.1); border-bottom: 1px dashed #4f8ef7; color: #7fb3ff; }
+
+  /* Right pane */
+  .right-section { padding: 10px 12px; border-bottom: 1px solid #1e1e1e; }
+  .right-section h4 { margin: 0 0 8px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: #555; }
+  .finding-line { display: flex; justify-content: space-between; font-size: 11px; padding: 3px 0; border-bottom: 1px solid #1a1a1a; }
+  .finding-line:last-child { border-bottom: none; }
+  .finding-line .name { color: #bbb; }
+  .finding-line .amt { color: #f74f4f; font-weight: 600; }
+  .total-row { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; margin-top: 6px; }
+  .total-row .lbl { color: #888; }
+  .total-row .amt { color: #f74f4f; }
+
+  /* History log */
+  .history-entry { padding: 8px 10px; border-bottom: 1px solid #1a1a1a; }
+  .history-entry:last-child { border-bottom: none; }
+  .history-meta { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+  .history-date { font-size: 10px; color: #555; }
+  .history-badge { font-size: 9px; padding: 1px 6px; border-radius: 3px; font-weight: 700; }
+  .history-badge.sent { background: rgba(79,142,247,0.15); color: #4f8ef7; }
+  .history-badge.reply { background: rgba(247,162,79,0.15); color: #f7a24f; }
+  .history-summary { font-size: 11px; color: #aaa; }
+  .history-amt { font-size: 11px; font-weight: 600; color: #f74f4f; }
+  .history-view { font-size: 10px; color: #4f8ef7; margin-left: auto; }
+
+  .action-buttons { padding: 10px 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+
+  /* Stage 2: sent state */
+  .stage-label { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+</style>
+
+<h2>Dispute Workflow</h2>
+<p class="subtitle">Two states: Draft (before sending) and Active (after first send, showing history)</p>
+
+<!-- STATE 1: DRAFT -->
+<div class="stage-label">State 1 — Drafting the dispute</div>
+<div class="shell">
+  <div class="top-bar">
+    <span class="back">← Werner #INV-20240312</span>
+    <h2>Dispute Draft</h2>
+    <span class="badge draft">Draft</span>
+    <div class="top-actions">
+      <button class="btn ghost">Save Draft</button>
+      <button class="btn primary">Send Dispute →</button>
+    </div>
+  </div>
+  <div class="body">
+    <div class="left-pane">
+      <div class="recipient-row">
+        <span class="to-label">To</span>
+        <span class="recipient-email">billing@werner-enterprises.com</span>
+        <span class="recipient-note">Auto-detected from invoice email</span>
+        <span class="edit-link">Edit</span>
+      </div>
+      <div class="letter-label">
+        <span>AI-Generated Dispute Letter — fully editable</span>
+        <button class="btn ghost sm">↺ Regenerate</button>
+      </div>
+      <div class="letter-box">
+        <p>Subject: Dispute — Invoice #INV-20240312 — Overcharge of <span class="letter-highlight">$620.00</span></p>
+        <p>Dear Werner Enterprises Billing Team,</p>
+        <p>We are writing to formally dispute invoice <span class="letter-highlight">#INV-20240312</span> dated March 12, 2024, totaling $4,200.00. After reviewing this invoice against our contracted rate agreement and supporting shipment documentation, we have identified the following discrepancies:</p>
+        <p><strong>1. Rate Mismatch — $380.00</strong><br/>
+        The line-haul rate applied was <span class="letter-highlight">$2.18/mile</span>, however our contracted rate effective January 2024 is <span class="letter-highlight">$1.96/mile</span> (Werner Rate Sheet, Page 3). Applied to 1,740 miles, this results in an overcharge of $380.00.</p>
+        <p><strong>2. Unverified Detention — $240.00</strong><br/>
+        Detention of 3 hours at $80/hr was billed on this invoice. However, BOL #2024-0891 does not contain arrival or departure timestamps, making this charge unverifiable. We request removal pending signed documentation.</p>
+        <p>We request a corrected invoice totaling <span class="letter-highlight">$3,580.00</span> or a credit memo for the difference of $620.00.</p>
+        <p>Please respond within 10 business days.</p>
+        <p>Regards,<br/>Sarah K.<br/>Accounts Payable — Acme Logistics</p>
+        <p class="editable-hint">Click anywhere in this letter to edit before sending.</p>
+      </div>
+    </div>
+    <div class="right-pane">
+      <div class="right-section">
+        <h4>Disputing</h4>
+        <div class="finding-line"><span class="name">Rate Mismatch</span><span class="amt">−$380.00</span></div>
+        <div class="finding-line"><span class="name">Detention</span><span class="amt">−$240.00</span></div>
+        <div class="total-row"><span class="lbl">Total</span><span class="amt">−$620.00</span></div>
+      </div>
+      <div class="right-section">
+        <h4>Sending From</h4>
+        <div style="font-size:11px;color:#bbb;">sarah@acmelogistics.com</div>
+        <div style="font-size:10px;color:#555;margin-top:2px;">via connected Gmail</div>
+      </div>
+      <div class="right-section">
+        <h4>Dispute History</h4>
+        <div style="font-size:11px;color:#555;font-style:italic;">Not sent yet.</div>
+      </div>
+      <div class="action-buttons">
+        <button class="btn primary" style="text-align:center">Send Dispute →</button>
+        <button class="btn ghost" style="text-align:center">Save Draft</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STATE 2: ACTIVE — carrier responded, AP revising -->
+<div class="stage-label" style="margin-top:8px;">State 2 — Active dispute (carrier responded, AP revising)</div>
+<div class="shell">
+  <div class="top-bar">
+    <span class="back">← Werner #INV-20240312</span>
+    <h2>Dispute — Round 2</h2>
+    <span class="badge responded">Carrier Responded</span>
+    <div class="top-actions">
+      <button class="btn ghost">Save Draft</button>
+      <button class="btn primary">Resend →</button>
+    </div>
+  </div>
+  <div class="body">
+    <div class="left-pane">
+      <div class="recipient-row">
+        <span class="to-label">To</span>
+        <span class="recipient-email">billing@werner-enterprises.com</span>
+        <span class="edit-link">Edit</span>
+      </div>
+      <div class="letter-label">
+        <span>Revised letter — rate mismatch accepted, disputing detention only</span>
+        <button class="btn ghost sm">↺ Regenerate</button>
+      </div>
+      <div class="letter-box" style="min-height:160px;">
+        <p>Subject: Follow-up — Invoice #INV-20240312 — Remaining Dispute $240.00</p>
+        <p>Dear Werner Enterprises Billing Team,</p>
+        <p>Thank you for your credit of $380.00 for the rate discrepancy on invoice #INV-20240312. We appreciate the prompt resolution.</p>
+        <p>However, the detention charge of <span class="letter-highlight">$240.00</span> remains in dispute. As noted in our original correspondence, BOL #2024-0891 does not contain arrival or departure timestamps. We are unable to verify the 3 hours of detention billed. Please provide signed arrival/departure documentation or issue a credit for this charge.</p>
+        <p class="editable-hint">Click anywhere to edit.</p>
+      </div>
+    </div>
+    <div class="right-pane">
+      <div class="right-section">
+        <h4>Currently Disputing</h4>
+        <div class="finding-line"><span class="name" style="color:#555;text-decoration:line-through;">Rate Mismatch</span><span class="amt" style="color:#4fcf7a;">Accepted ✓</span></div>
+        <div class="finding-line"><span class="name">Detention</span><span class="amt">−$240.00</span></div>
+        <div class="total-row"><span class="lbl">Remaining</span><span class="amt">−$240.00</span></div>
+      </div>
+      <div class="right-section">
+        <h4>Dispute History</h4>
+        <div class="history-entry">
+          <div class="history-meta">
+            <span class="history-date">Mar 14, 2024</span>
+            <span class="history-badge sent">Sent</span>
+            <span class="history-view">View</span>
+          </div>
+          <div class="history-summary">Original dispute · <span class="history-amt">$620.00</span></div>
+        </div>
+        <div class="history-entry">
+          <div class="history-meta">
+            <span class="history-date">Mar 17, 2024</span>
+            <span class="history-badge reply">Carrier Reply</span>
+            <span class="history-view">View email</span>
+          </div>
+          <div class="history-summary">Accepted rate mismatch ($380). Rejected detention claim.</div>
+        </div>
+      </div>
+      <div class="action-buttons">
+        <button class="btn primary" style="text-align:center">Resend →</button>
+        <button class="btn ghost" style="text-align:center" style="color:#4fcf7a;">Mark Resolved</button>
+      </div>
+    </div>
+  </div>
+</div>

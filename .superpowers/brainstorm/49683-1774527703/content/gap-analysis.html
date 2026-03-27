@@ -1,0 +1,77 @@
+<style>
+  .gap { border-left: 3px solid #f74f4f; padding: 10px 14px; margin: 8px 0; border-radius: 0 8px 8px 0; background: rgba(247,79,79,0.06); }
+  .ok { border-left: 3px solid #4fcf7a; padding: 10px 14px; margin: 8px 0; border-radius: 0 8px 8px 0; background: rgba(79,207,122,0.06); }
+  .warn { border-left: 3px solid #f7a24f; padding: 10px 14px; margin: 8px 0; border-radius: 0 8px 8px 0; background: rgba(247,162,79,0.06); }
+  .tag { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; margin-right: 6px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .tag.missing { background: rgba(247,79,79,0.2); color: #f74f4f; }
+  .tag.present { background: rgba(79,207,122,0.2); color: #4fcf7a; }
+  .tag.partial { background: rgba(247,162,79,0.2); color: #f7a24f; }
+  h3 { margin: 18px 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary, #888); }
+  p, li { font-size: 13px; margin: 3px 0; }
+  ul { margin: 4px 0 0 16px; padding: 0; }
+</style>
+
+<h2>Gap Analysis</h2>
+<p class="subtitle">Previous architecture vs. what we agreed to build</p>
+
+<h3>Pipeline — Well Covered ✓</h3>
+
+<div class="ok">
+  <span class="tag present">Present</span><strong>Async pipeline with job queue</strong>
+  <p>Two-phase worker model (OCR+classify → process) is exactly Approach B. Solid.</p>
+</div>
+
+<div class="ok">
+  <span class="tag present">Present</span><strong>Invoice detection + structured parsing</strong>
+  <p>Gate on bad parse is a great addition we hadn't discussed — keep it.</p>
+</div>
+
+<div class="ok">
+  <span class="tag present">Present</span><strong>Findings taxonomy</strong>
+  <p>Fast checks + Audit Agent split is excellent. The findings table is more specific than needed — that's a good thing.</p>
+</div>
+
+<h3>Gaps — Critical</h3>
+
+<div class="gap">
+  <span class="tag missing">Missing</span><strong>Dispute workflow</strong>
+  <p>Entirely absent. Flag → AI-draft letter → send from app → track status is the core value-add for the AP team. The pipeline produces findings, but there's no workflow for acting on them.</p>
+</div>
+
+<div class="gap">
+  <span class="tag missing">Missing</span><strong>Contracted rate sheet audit check</strong>
+  <p>The findings table covers fuel, detention, lumper, accessorials — but not base line-haul rate vs. contracted rate. For FTL, the biggest overcharge is often a wrong per-mile or flat rate. Rate sheets need to be uploaded and compared.</p>
+</div>
+
+<div class="gap">
+  <span class="tag missing">Missing</span><strong>Outlook OAuth intake</strong>
+  <p>Current flow is Gmail-only (via n8n). We agreed on Gmail + Outlook + manual upload.</p>
+</div>
+
+<div class="gap">
+  <span class="tag missing">Missing</span><strong>Manual upload intake</strong>
+  <p>No PDF drag-and-drop path. Some AP teams receive invoices by mail or outside email — they need to upload directly.</p>
+</div>
+
+<h3>Gaps — Supporting Data</h3>
+
+<div class="warn">
+  <span class="tag partial">Partial</span><strong>Rate sheet management</strong>
+  <p>The audit agent needs contracted rate sheets to exist in the system, but there's no ingestion or management flow for them. Where do they live? How does the AP team upload and update them per carrier?</p>
+</div>
+
+<div class="warn">
+  <span class="tag partial">Partial</span><strong>Carrier contact management</strong>
+  <p>Needed for the dispute workflow — to send a dispute email, the app needs to know the carrier's billing contact. Not present.</p>
+</div>
+
+<div class="warn">
+  <span class="tag partial">Partial</span><strong>BOL mismatch as explicit audit check</strong>
+  <p>Document linking exists, but "BOL says X, invoice says Y" isn't in the findings table. This should be a named finding type (weight, origin/destination, service type mismatch).</p>
+</div>
+
+<h3>What the Previous Arch Has That's Worth Keeping</h3>
+<div class="ok">
+  <span class="tag present">Keep</span>Gate/abort on bad parse · Dedup findings · near-duplicate invoice detection · n8n orchestration · GCS for files · Supabase for structured data · action_needed/reviewing/cleared status
+</div>
+

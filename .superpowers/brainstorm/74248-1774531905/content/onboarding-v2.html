@@ -1,0 +1,94 @@
+<style>
+  .steps { display: flex; flex-direction: column; gap: 0; }
+  .step { display: flex; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--border, #2a2a2a); }
+  .step:last-child { border-bottom: none; }
+  .step-num { width: 28px; height: 28px; border-radius: 50%; background: #4f8ef7; color: #fff; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .step-num.done { background: #4fcf7a; }
+  .step-body h3 { margin: 0 0 4px; font-size: 14px; font-weight: 600; }
+  .step-body p { margin: 0; font-size: 13px; color: var(--text-secondary, #aaa); line-height: 1.5; }
+  .step-body .detail { margin-top: 6px; font-size: 12px; color: var(--text-secondary, #888); background: var(--surface, #1a1a1a); border: 1px solid var(--border, #2a2a2a); border-radius: 6px; padding: 8px 10px; }
+  .pill { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-right: 4px; font-weight: 600; }
+  .pill.required { background: rgba(247,79,79,0.15); color: #f74f4f; }
+  .pill.optional { background: rgba(150,150,150,0.15); color: #999; }
+  .pill.auto { background: rgba(79,207,122,0.15); color: #4fcf7a; }
+  .note { font-size: 12px; color: var(--text-secondary, #888); margin-top: 16px; padding: 10px 14px; border: 1px solid var(--border, #2a2a2a); border-radius: 8px; border-left: 3px solid #f7a24f; }
+  .skip-btn { display: inline-block; margin-top: 6px; font-size: 11px; color: #888; border: 1px dashed #444; border-radius: 6px; padding: 3px 10px; }
+  .accuracy-bar { margin-top: 8px; }
+  .accuracy-label { font-size: 11px; color: #888; margin-bottom: 4px; }
+  .bar-track { background: #2a2a2a; border-radius: 4px; height: 6px; width: 100%; }
+  .bar-fill { height: 6px; border-radius: 4px; background: linear-gradient(90deg, #f74f4f, #f7a24f); }
+</style>
+
+<h2>Onboarding Flow <span style="font-size:13px;font-weight:400;color:#888">— revised</span></h2>
+<p class="subtitle">Minimum required: steps 1 &amp; 2 only. Everything else improves audit accuracy.</p>
+
+<div class="steps">
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <h3>Create account</h3>
+      <p>Email + password or Google SSO. Company name. Done.</p>
+      <div class="detail"><span class="pill required">Required</span> Company name</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <h3>Connect your invoice mailbox</h3>
+      <p>OAuth connect Gmail or Outlook. Pick the mailbox or folder where carrier invoices land. App immediately scans and shows what it found.</p>
+      <div class="detail">
+        <span class="pill required">Required</span> At least one mailbox<br/>
+        <span class="pill auto">Auto</span> Carrier names + billing emails extracted from invoice emails — no manual entry<br/>
+        <span style="font-size:11px;color:#888;margin-top:4px;display:block;">"Found 47 emails in the last 30 days that may contain invoices."</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <h3>Upload rate sheets <span style="font-weight:400;color:#888">— optional</span></h3>
+      <p>Upload your contracted rate sheets per carrier. Enables base rate comparison — the highest-value audit check for FTL.</p>
+      <div class="detail">
+        <span class="pill optional">Optional</span> Upload now or later from Settings → Carriers<br/>
+        <div class="accuracy-bar">
+          <div class="accuracy-label">Audit accuracy without rate sheets: ~60%</div>
+          <div class="bar-track"><div class="bar-fill" style="width:60%"></div></div>
+        </div>
+        <div class="accuracy-bar" style="margin-top:6px">
+          <div class="accuracy-label">Audit accuracy with rate sheets: ~90%</div>
+          <div class="bar-track"><div class="bar-fill" style="width:90%;background:linear-gradient(90deg,#4f8ef7,#4fcf7a)"></div></div>
+        </div>
+      </div>
+      <span class="skip-btn">Skip for now →</span>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <h3>Upload Bills of Lading <span style="font-weight:400;color:#888">— optional</span></h3>
+      <p>Drag-and-drop BOLs for recent shipments. Matched to invoices automatically via BOL/PRO numbers. Enables shipment-level cross-referencing.</p>
+      <div class="detail">
+        <span class="pill optional">Optional</span> Upload now, or attach them per-invoice later
+      </div>
+      <span class="skip-btn">Skip for now →</span>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num done">✓</div>
+    <div class="step-body">
+      <h3>You're live</h3>
+      <p>Pipeline starts immediately. First findings appear within minutes. Rate sheets and BOLs can be added anytime to improve accuracy.</p>
+      <div class="detail"><span class="pill auto">Auto</span> Last 90 days of emails processed in background</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="note">
+  <strong>First dispute confirmation:</strong> Before the first dispute is sent to a carrier, the app shows the extracted billing email and asks for one-time confirmation. Saved automatically after that.
+</div>

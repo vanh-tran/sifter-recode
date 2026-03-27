@@ -1,0 +1,177 @@
+<style>
+  .mockup-shell { background: #111; border: 1.5px solid #2a2a2a; border-radius: 10px; overflow: hidden; font-size: 12px; }
+  .top-bar { background: #161616; border-bottom: 1px solid #2a2a2a; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; }
+  .top-bar .logo { font-weight: 700; font-size: 14px; color: #fff; letter-spacing: -0.3px; }
+  .top-bar .logo span { color: #4f8ef7; }
+  .top-bar .nav { display: flex; gap: 20px; font-size: 12px; color: #888; }
+  .top-bar .nav .active { color: #fff; }
+  .top-bar .user { font-size: 11px; color: #666; }
+
+  .stats-row { display: flex; gap: 1px; background: #2a2a2a; border-bottom: 1px solid #2a2a2a; }
+  .stat { flex: 1; background: #161616; padding: 12px 16px; }
+  .stat .val { font-size: 20px; font-weight: 700; color: #fff; }
+  .stat .val.blue { color: #4f8ef7; }
+  .stat .val.orange { color: #f7a24f; }
+  .stat .val.green { color: #4fcf7a; }
+  .stat .val.red { color: #f74f4f; }
+  .stat .lbl { font-size: 11px; color: #666; margin-top: 2px; }
+
+  .toolbar { padding: 10px 16px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #1e1e1e; }
+  .filter-tab { font-size: 11px; padding: 4px 10px; border-radius: 5px; color: #888; cursor: pointer; border: 1px solid transparent; }
+  .filter-tab.active { background: #1e2a3a; color: #4f8ef7; border-color: #4f8ef7; }
+  .search { margin-left: auto; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 5px; padding: 4px 10px; color: #666; font-size: 11px; width: 180px; }
+
+  .col-headers { display: flex; align-items: center; gap: 12px; padding: 7px 16px; border-bottom: 1px solid #1e1e1e; }
+  .col-h { font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .dispute-row { display: flex; align-items: center; gap: 12px; padding: 11px 16px 11px 12px; border-bottom: 1px solid #1a1a1a; cursor: pointer; border-left: 3px solid transparent; }
+  .dispute-row:hover { background: #181818; }
+  .dispute-row.needs-reply { border-left-color: #f7a24f; background: rgba(247,162,79,0.03); }
+  .d-carrier { font-weight: 600; color: #e0e0e0; width: 130px; flex-shrink: 0; font-size: 12px; }
+  .d-invoice { color: #666; width: 110px; flex-shrink: 0; font-size: 11px; }
+  .d-amount { font-weight: 700; color: #f74f4f; width: 90px; flex-shrink: 0; font-size: 12px; }
+  .d-amount.resolved { color: #4fcf7a; }
+  .d-activity { color: #555; width: 120px; flex-shrink: 0; font-size: 11px; }
+  .d-action { margin-left: auto; font-size: 11px; color: #4f8ef7; flex-shrink: 0; }
+
+  .status-badge { font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 500; white-space: nowrap; width: 110px; flex-shrink: 0; text-align: center; }
+  .status-badge.draft { background: rgba(100,100,100,0.12); color: #666; border: 1px solid #2a2a2a; }
+  .status-badge.sent { background: rgba(79,142,247,0.1); color: #4f8ef7; border: 1px solid rgba(79,142,247,0.25); }
+  .status-badge.replied { background: rgba(247,162,79,0.12); color: #f7a24f; border: 1px solid rgba(247,162,79,0.3); font-weight: 700; }
+  .status-badge.resolved { background: rgba(79,207,122,0.1); color: #4fcf7a; border: 1px solid rgba(79,207,122,0.2); }
+
+  .replied-dot { width: 6px; height: 6px; border-radius: 50%; background: #f7a24f; box-shadow: 0 0 5px #f7a24f88; flex-shrink: 0; }
+  .empty-dot { width: 6px; height: 6px; flex-shrink: 0; }
+
+  .empty-footer { padding: 10px 16px; text-align: center; font-size: 11px; color: #444; }
+</style>
+
+<h2>Disputes List</h2>
+<p class="subtitle">All disputes across invoices — sorted by last activity. "Carrier Replied" rows are highlighted and float to the top of Active.</p>
+
+<div class="mockup-shell">
+  <div class="top-bar">
+    <div class="logo"><span>Sifter</span></div>
+    <div class="nav">
+      <span>Invoices</span>
+      <span class="active">Disputes</span>
+      <span>Carriers</span>
+      <span>Settings</span>
+    </div>
+    <div class="user">Acme Logistics · Sarah K.</div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat"><div class="val blue">9</div><div class="lbl">Open Disputes</div></div>
+    <div class="stat"><div class="val" style="color:#888">3</div><div class="lbl">Draft</div></div>
+    <div class="stat"><div class="val blue">4</div><div class="lbl">Sent — Awaiting Reply</div></div>
+    <div class="stat"><div class="val orange">2</div><div class="lbl">Carrier Replied</div></div>
+    <div class="stat"><div class="val green">$8,940</div><div class="lbl">Recovered (30d)</div></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="filter-tab active">Active <span style="color:#4f8ef7">9</span></div>
+    <div class="filter-tab">Resolved</div>
+    <div class="filter-tab">All</div>
+    <div class="search">Search carrier, invoice #...</div>
+  </div>
+
+  <div class="col-headers">
+    <div class="empty-dot"></div>
+    <div class="col-h" style="width:130px">Carrier</div>
+    <div class="col-h" style="width:110px">Invoice #</div>
+    <div class="col-h" style="width:110px">Status</div>
+    <div class="col-h" style="width:90px">Disputed</div>
+    <div class="col-h" style="width:120px">Last Activity</div>
+    <div class="col-h" style="margin-left:auto">Action</div>
+  </div>
+
+  <!-- Carrier Replied rows float to top -->
+  <div class="dispute-row needs-reply">
+    <div class="replied-dot"></div>
+    <div class="d-carrier">Werner Ent.</div>
+    <div class="d-invoice">#INV-20240312</div>
+    <div class="status-badge replied">Carrier Replied</div>
+    <div class="d-amount">$620</div>
+    <div class="d-activity">Today, 9:14 AM</div>
+    <div class="d-action">Open →</div>
+  </div>
+  <div class="dispute-row needs-reply">
+    <div class="replied-dot"></div>
+    <div class="d-carrier">J.B. Hunt</div>
+    <div class="d-invoice">#INV-20240309</div>
+    <div class="status-badge replied">Carrier Replied</div>
+    <div class="d-amount">$7,850</div>
+    <div class="d-activity">Yesterday, 4:02 PM</div>
+    <div class="d-action">Open →</div>
+  </div>
+
+  <!-- Sent rows -->
+  <div class="dispute-row">
+    <div class="empty-dot"></div>
+    <div class="d-carrier">Schneider</div>
+    <div class="d-invoice">#INV-20240308</div>
+    <div class="status-badge sent">Sent</div>
+    <div class="d-amount">$215</div>
+    <div class="d-activity">Mar 19, 11:30 AM</div>
+    <div class="d-action">Open →</div>
+  </div>
+  <div class="dispute-row">
+    <div class="empty-dot"></div>
+    <div class="d-carrier">KLLM Trans.</div>
+    <div class="d-invoice">#INV-20240305</div>
+    <div class="status-badge sent">Sent</div>
+    <div class="d-amount">$450</div>
+    <div class="d-activity">Mar 17, 2:15 PM</div>
+    <div class="d-action">Open →</div>
+  </div>
+  <div class="dispute-row">
+    <div class="empty-dot"></div>
+    <div class="d-carrier">Old Dominion</div>
+    <div class="d-invoice">#INV-20240301</div>
+    <div class="status-badge sent">Sent</div>
+    <div class="d-amount">$310</div>
+    <div class="d-activity">Mar 15, 10:00 AM</div>
+    <div class="d-action">Open →</div>
+  </div>
+  <div class="dispute-row">
+    <div class="empty-dot"></div>
+    <div class="d-carrier">XPO Logistics</div>
+    <div class="d-invoice">#INV-20240228</div>
+    <div class="status-badge sent">Sent</div>
+    <div class="d-amount">$180</div>
+    <div class="d-activity">Mar 12, 3:45 PM</div>
+    <div class="d-action">Open →</div>
+  </div>
+
+  <!-- Draft rows -->
+  <div class="dispute-row">
+    <div class="empty-dot"></div>
+    <div class="d-carrier">Swift Trans.</div>
+    <div class="d-invoice">#INV-20240226</div>
+    <div class="status-badge draft">Draft</div>
+    <div class="d-amount">$890</div>
+    <div class="d-activity">Mar 10, 9:00 AM</div>
+    <div class="d-action">Open →</div>
+  </div>
+  <div class="dispute-row">
+    <div class="empty-dot"></div>
+    <div class="d-carrier">Werner Ent.</div>
+    <div class="d-invoice">#INV-20240220</div>
+    <div class="status-badge draft">Draft</div>
+    <div class="d-amount">$130</div>
+    <div class="d-activity">Mar 8, 1:22 PM</div>
+    <div class="d-action">Open →</div>
+  </div>
+  <div class="dispute-row">
+    <div class="empty-dot"></div>
+    <div class="d-carrier">Heartland Exp.</div>
+    <div class="d-invoice">#INV-20240218</div>
+    <div class="status-badge draft">Draft</div>
+    <div class="d-amount">$275</div>
+    <div class="d-activity">Mar 6, 4:50 PM</div>
+    <div class="d-action">Open →</div>
+  </div>
+
+  <div class="empty-footer">Showing 9 active disputes · Sorted by: last activity ↓ · Carrier Replied pinned to top</div>
+</div>

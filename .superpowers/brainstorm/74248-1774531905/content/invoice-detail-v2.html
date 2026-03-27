@@ -1,0 +1,228 @@
+<style>
+  .shell { background: #111; border: 1.5px solid #2a2a2a; border-radius: 10px; overflow: hidden; font-size: 12px; }
+  .top-bar { background: #161616; border-bottom: 1px solid #2a2a2a; padding: 9px 16px; display: flex; align-items: center; gap: 10px; }
+  .back { color: #4f8ef7; font-size: 11px; cursor: pointer; }
+  .top-bar h2 { margin: 0; font-size: 13px; font-weight: 600; color: #e0e0e0; }
+  .badge { font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 700; }
+  .badge.action { background: rgba(247,79,79,0.15); color: #f74f4f; border: 1px solid rgba(247,79,79,0.3); }
+  .top-actions { margin-left: auto; display: flex; gap: 8px; }
+  .btn { font-size: 11px; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-weight: 600; border: none; }
+  .btn.primary { background: #4f8ef7; color: #fff; }
+  .btn.ghost { background: transparent; color: #888; border: 1px solid #2a2a2a; }
+  .btn.danger-ghost { background: transparent; color: #f74f4f; border: 1px solid rgba(247,79,79,0.3); }
+  .btn.xs { font-size: 10px; padding: 3px 8px; }
+
+  .body { display: flex; }
+  .left-pane { flex: 1; border-right: 1px solid #1e1e1e; overflow: hidden; }
+  .right-pane { width: 280px; flex-shrink: 0; }
+
+  .inv-header { padding: 12px 16px; border-bottom: 1px solid #1e1e1e; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .inv-field .lbl { font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
+  .inv-field .val { font-size: 13px; color: #ddd; font-weight: 500; }
+  .inv-field .val.big { font-size: 17px; font-weight: 700; color: #fff; }
+  .inv-field .val.red { color: #f74f4f; }
+
+  .pdf-area { margin: 10px 14px; background: #161616; border: 1px solid #2a2a2a; border-radius: 6px; height: 80px; display: flex; align-items: center; justify-content: center; color: #444; font-size: 11px; gap: 8px; }
+
+  .section-title { padding: 8px 16px 4px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: #555; border-top: 1px solid #1a1a1a; display: flex; align-items: center; gap: 6px; }
+  .section-title span { color: #888; }
+
+  /* Finding */
+  .finding { margin: 0 12px 10px; border: 1px solid #2a2a2a; border-radius: 8px; overflow: hidden; }
+  .finding.selected { border-color: rgba(247,79,79,0.35); }
+  .finding-head { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #161616; }
+  .finding-check { width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid #333; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .finding-check.checked { background: #f74f4f; border-color: #f74f4f; color: #fff; font-size: 9px; }
+  .finding-type { font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 600; white-space: nowrap; }
+  .finding-type.red { background: rgba(247,79,79,0.1); color: #f77; border: 1px solid rgba(247,79,79,0.2); }
+  .finding-type.warn { background: rgba(247,162,79,0.1); color: #f7a24f; border: 1px solid rgba(247,162,79,0.2); }
+  .finding-desc { font-size: 12px; color: #ccc; flex: 1; }
+  .finding-desc.editing { background: #1a1a1a; border: 1px solid #4f8ef7; border-radius: 4px; padding: 2px 6px; color: #fff; outline: none; }
+  .finding-amount { font-size: 13px; font-weight: 700; color: #f74f4f; white-space: nowrap; }
+  .finding-amount.editing { background: #1a1a1a; border: 1px solid #4f8ef7; border-radius: 4px; padding: 2px 6px; color: #f74f4f; width: 70px; text-align: right; outline: none; }
+  .edit-icon { font-size: 11px; color: #444; cursor: pointer; flex-shrink: 0; padding: 2px 4px; border-radius: 3px; }
+  .edit-icon:hover { color: #4f8ef7; background: rgba(79,142,247,0.1); }
+
+  /* Evidence + proof */
+  .finding-body { padding: 8px 10px 10px; background: #131313; border-top: 1px solid #1e1e1e; }
+  .evidence-rows { margin-bottom: 8px; }
+  .evidence-row { display: flex; gap: 8px; margin-bottom: 3px; font-size: 11px; }
+  .ev-lbl { color: #555; width: 100px; flex-shrink: 0; }
+  .ev-val { color: #bbb; }
+  .ev-val.wrong { color: #f74f4f; text-decoration: line-through; }
+  .ev-val.right { color: #4fcf7a; }
+
+  /* Proof snippets */
+  .proof-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #555; margin: 8px 0 5px; }
+  .proof-clips { display: flex; gap: 8px; }
+  .proof-clip { flex: 1; border: 1px solid #2a2a2a; border-radius: 5px; overflow: hidden; background: #1a1a1a; }
+  .proof-clip-header { font-size: 10px; color: #666; padding: 4px 8px; border-bottom: 1px solid #1e1e1e; display: flex; justify-content: space-between; }
+  .proof-clip-header a { color: #4f8ef7; }
+  .proof-clip-body { padding: 6px 8px; font-size: 10px; font-family: monospace; color: #777; line-height: 1.6; position: relative; min-height: 52px; }
+  /* Simulate a PDF text clip with highlight */
+  .highlight { background: rgba(255, 220, 50, 0.25); border-bottom: 2px solid #f7d24f; color: #f7d24f; font-weight: 700; padding: 0 2px; border-radius: 2px; }
+  .highlight.red { background: rgba(247,79,79,0.2); border-bottom: 2px solid #f74f4f; color: #f77; }
+
+  /* Right pane */
+  .right-section { padding: 10px 12px; border-bottom: 1px solid #1e1e1e; }
+  .right-section h4 { margin: 0 0 8px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: #555; }
+  .summary-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+  .summary-row .lbl { color: #777; }
+  .summary-row .amt { color: #ddd; font-weight: 500; }
+  .summary-row .amt.red { color: #f74f4f; font-weight: 700; }
+  .summary-row .amt.green { color: #4fcf7a; }
+  .divider { border: none; border-top: 1px solid #1e1e1e; margin: 5px 0; }
+  .doc-item { display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: #888; padding: 3px 0; }
+  .doc-item .doc-name { color: #ccc; }
+  .doc-item .doc-link { color: #4f8ef7; font-size: 10px; }
+  .upload-link { font-size: 11px; color: #4f8ef7; margin-top: 4px; display: block; }
+
+  /* Dispute history */
+  .history-item { padding: 6px 0; border-bottom: 1px solid #1a1a1a; font-size: 11px; }
+  .history-item:last-child { border-bottom: none; }
+  .history-date { color: #555; font-size: 10px; }
+  .history-amt { color: #f74f4f; font-weight: 600; }
+  .history-status { display: inline-block; font-size: 9px; padding: 1px 6px; border-radius: 3px; background: rgba(79,142,247,0.15); color: #4f8ef7; margin-left: 4px; }
+
+  .dispute-summary { background: rgba(247,79,79,0.06); border: 1px solid rgba(247,79,79,0.2); border-radius: 6px; padding: 8px 10px; margin: 8px 12px; }
+  .dispute-summary .amount-big { font-size: 16px; font-weight: 700; color: #f74f4f; }
+  .dispute-summary .count { font-size: 11px; color: #888; }
+  .action-buttons { padding: 8px 12px 12px; display: flex; flex-direction: column; gap: 6px; }
+</style>
+
+<h2>Invoice Detail <span style="font-size:12px;font-weight:400;color:#666">v2 — editable findings + proof highlights</span></h2>
+<p class="subtitle">AP team can edit any finding before disputing. Proof shown as highlighted PDF snippets.</p>
+
+<div class="shell">
+  <div class="top-bar">
+    <span class="back">← Back</span>
+    <h2>Werner Enterprises — #INV-20240312</h2>
+    <span class="badge action">Action Needed</span>
+    <div class="top-actions">
+      <button class="btn ghost">Approve Invoice</button>
+      <button class="btn danger-ghost">Open Dispute (2)</button>
+    </div>
+  </div>
+
+  <div class="body">
+    <div class="left-pane">
+      <div class="inv-header">
+        <div class="inv-field"><div class="lbl">Carrier</div><div class="val">Werner Enterprises</div></div>
+        <div class="inv-field"><div class="lbl">Invoice #</div><div class="val">INV-20240312</div></div>
+        <div class="inv-field"><div class="lbl">Invoice Date</div><div class="val">Mar 12, 2024</div></div>
+        <div class="inv-field"><div class="lbl">Invoice Total</div><div class="val big">$4,200.00</div></div>
+        <div class="inv-field"><div class="lbl">Potential Overcharge</div><div class="val big red">−$620.00</div></div>
+        <div class="inv-field"><div class="lbl">BOL / PRO #</div><div class="val">BOL-2024-0891</div></div>
+      </div>
+
+      <div class="pdf-area">📄 &nbsp;invoice-werner-20240312.pdf &nbsp;·&nbsp; <span style="color:#4f8ef7;cursor:pointer">View original</span>
+      </div>
+
+      <div class="section-title">Audit Findings <span>— 2 issues · check to include in dispute · ✏️ pencil to edit</span></div>
+
+      <!-- Finding 1 -->
+      <div class="finding selected">
+        <div class="finding-head">
+          <div class="finding-check checked">✓</div>
+          <span class="finding-type red">Rate Mismatch</span>
+          <span class="finding-desc">Base line-haul rate exceeds contracted amount</span>
+          <span class="finding-amount">−$380.00</span>
+          <span class="edit-icon" title="Edit this finding">✏️</span>
+        </div>
+        <div class="finding-body">
+          <div class="evidence-rows">
+            <div class="evidence-row"><span class="ev-lbl">Billed:</span><span class="ev-val wrong">$2.18/mi × 1,740 mi = $3,793.20</span></div>
+            <div class="evidence-row"><span class="ev-lbl">Contracted:</span><span class="ev-val right">$1.96/mi × 1,740 mi = $3,410.40</span></div>
+            <div class="evidence-row"><span class="ev-lbl">Difference:</span><span class="ev-val" style="color:#f74f4f">$382.80 overcharged</span></div>
+          </div>
+          <div class="proof-label">Proof — highlighted source excerpts</div>
+          <div class="proof-clips">
+            <div class="proof-clip">
+              <div class="proof-clip-header"><span>invoice-werner-20240312.pdf · Line items</span><a>View full</a></div>
+              <div class="proof-clip-body">
+                Line Haul &nbsp;&nbsp;&nbsp; 1,740 mi &nbsp;&nbsp;&nbsp; <span class="highlight red">$2.18/mi</span> &nbsp;&nbsp;&nbsp; $3,793.20<br/>
+                Fuel Surcharge &nbsp;&nbsp;&nbsp; 18% &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; $682.78<br/>
+                <span style="color:#444">Total &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; $4,476.00</span>
+              </div>
+            </div>
+            <div class="proof-clip">
+              <div class="proof-clip-header"><span>werner-rates-jan2024.pdf · Pg 3</span><a>View full</a></div>
+              <div class="proof-clip-body">
+                Region: Midwest–Southeast<br/>
+                Effective: Jan 1, 2024<br/>
+                Line Haul Rate: <span class="highlight">$1.96/mi</span><br/>
+                <span style="color:#444">Min charge: $950</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Finding 2 — editing state shown -->
+      <div class="finding selected">
+        <div class="finding-head">
+          <div class="finding-check checked">✓</div>
+          <span class="finding-type warn">Detention</span>
+          <input class="finding-desc editing" value="Detention billed — arrival/departure times missing from BOL" style="font-size:12px;font-family:inherit;" />
+          <input class="finding-amount editing" value="$240.00" />
+          <span class="edit-icon" style="color:#4f8ef7">✏️</span>
+        </div>
+        <div class="finding-body">
+          <div class="evidence-rows">
+            <div class="evidence-row"><span class="ev-lbl">Billed:</span><span class="ev-val wrong">3 hrs @ $80/hr = $240.00</span></div>
+            <div class="evidence-row"><span class="ev-lbl">BOL record:</span><span class="ev-val" style="color:#f7a24f">Arrival/departure times not recorded</span></div>
+            <div class="evidence-row"><span class="ev-lbl">Contract:</span><span class="ev-val">2 free hrs included, $80/hr after — unverifiable</span></div>
+          </div>
+          <div class="proof-label">Proof</div>
+          <div class="proof-clips">
+            <div class="proof-clip">
+              <div class="proof-clip-header"><span>BOL-2024-0891.pdf · Signature block</span><a>View full</a></div>
+              <div class="proof-clip-body">
+                Carrier arrival: <span class="highlight red">____________</span> &nbsp; (blank)<br/>
+                Carrier departure: <span class="highlight red">____________</span> &nbsp; (blank)<br/>
+                <span style="color:#444">Driver signature: J. Martinez ✓</span>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:8px;font-size:10px;color:#555;">⚠️ Editing this finding — changes saved to dispute draft only, not to AI output.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right pane -->
+    <div class="right-pane">
+      <div class="right-section">
+        <h4>Invoice Summary</h4>
+        <div class="summary-row"><span class="lbl">Invoice total</span><span class="amt">$4,200.00</span></div>
+        <div class="summary-row"><span class="lbl">Selected findings</span><span class="amt red">−$620.00</span></div>
+        <div class="divider"></div>
+        <div class="summary-row"><span class="lbl">Expected total</span><span class="amt green">$3,580.00</span></div>
+      </div>
+
+      <div class="right-section">
+        <h4>Supporting Documents</h4>
+        <div class="doc-item"><span class="doc-name">BOL-2024-0891.pdf</span><span class="doc-link">View</span></div>
+        <div class="doc-item"><span class="doc-name">werner-rates-jan2024.pdf</span><span class="doc-link">View</span></div>
+        <a class="upload-link">+ Attach document</a>
+      </div>
+
+      <div class="right-section">
+        <h4>Dispute History</h4>
+        <div style="color:#555;font-size:11px;font-style:italic;">No dispute sent yet.</div>
+        <div style="font-size:10px;color:#444;margin-top:4px;">Once sent, each version is logged here permanently.</div>
+      </div>
+
+      <div class="dispute-summary">
+        <div style="font-size:11px;color:#aaa;margin-bottom:4px;">Ready to dispute:</div>
+        <div class="amount-big">$620.00</div>
+        <div class="count">2 findings selected</div>
+      </div>
+
+      <div class="action-buttons">
+        <button class="btn primary" style="text-align:center">Open Dispute →</button>
+        <button class="btn ghost" style="text-align:center">Approve Invoice</button>
+      </div>
+    </div>
+  </div>
+</div>

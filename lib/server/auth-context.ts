@@ -2,14 +2,17 @@ import type { createClient } from '@/lib/supabase/server';
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
-interface AuthOrgContext {
+export type MemberRole = 'owner' | 'admin' | 'manager' | 'member' | 'viewer';
+
+export interface AuthOrgContext {
   userId: string;
   orgId: string;
+  role: MemberRole;
 }
 
 /**
- * Resolve authenticated user + org context for server routes.
- * Falls back to memberships when org_id claim is missing.
+ * Resolve authenticated user + org context (including RBAC role) for server routes.
+ * Only active memberships are considered — invited users are not yet authorised.
  */
 export async function getAuthOrgContext(
   supabase: SupabaseServerClient
@@ -20,7 +23,6 @@ export async function getAuthOrgContext(
   let userId = typeof claims?.sub === 'string' ? claims.sub : null;
   let orgId = typeof claims?.org_id === 'string' ? claims.org_id : null;
 
-  // Some older sessions may not include org_id claim yet.
   if (!userId) {
     const { data: sessionData } = await supabase.auth.getSession();
     userId = sessionData.session?.user?.id ?? null;
@@ -30,22 +32,27 @@ export async function getAuthOrgContext(
     return null;
   }
 
-  if (!orgId) {
-    const { data: membership } = await supabase
-      .from('memberships')
-      .select('org_id')
-      .eq('user_id', userId)
-      .in('status', ['active', 'invited'])
-      .order('status', { ascending: true })
-      .limit(1)
-      .maybeSingle();
+  let membershipQuery = supabase
+    .from('memberships')
+    .select('org_id, role')
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .order('created_at', { ascending: true })
+    .limit(1);
 
-    orgId = typeof membership?.org_id === 'string' ? membership.org_id : null;
+  if (orgId) {
+    membershipQuery = membershipQuery.eq('org_id', orgId);
   }
 
-  if (!orgId) {
+  const { data: membership } = await membershipQuery.maybeSingle();
+
+  if (!membership) {
     return null;
   }
 
-  return { userId, orgId };
+  return {
+    userId,
+    orgId: membership.org_id as string,
+    role: membership.role as MemberRole,
+  };
 }

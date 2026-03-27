@@ -111,16 +111,17 @@ export default function GenerateDisputeModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+      <div className="mx-4 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-brand-border bg-brand-surface shadow-xl">
         <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">
+          <div className="mb-6 flex items-center justify-between">
+            <h2 className="text-xl font-bold text-brand-primary">
               {step === 'generate' ? 'Generate Dispute Document' : 'Send Dispute Document'}
             </h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
+              type="button"
+              className="text-brand-muted hover:text-brand-primary"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -129,7 +130,7 @@ export default function GenerateDisputeModal({
           </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-800 rounded-md text-sm">
+            <div className="mb-4 rounded-md border border-brand-border bg-brand-destructive-soft p-3 text-sm text-brand-destructive">
               {error}
             </div>
           )}
@@ -137,13 +138,13 @@ export default function GenerateDisputeModal({
           {step === 'generate' && (
             <div className="space-y-4">
               <div>
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="mb-4 text-sm text-brand-muted">
                   This will generate a PDF dispute document with {approvedFindings.length} approved finding(s).
                 </p>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="mb-1 block text-sm font-medium text-brand-primary">
                       Recipient Email (Optional)
                     </label>
                     <input
@@ -151,15 +152,15 @@ export default function GenerateDisputeModal({
                       value={recipientEmail}
                       onChange={(e) => setRecipientEmail(e.target.value)}
                       placeholder="carrier@example.com"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="input-brand w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#4f8ef7]/40"
                     />
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-xs text-brand-muted">
                       If provided, you can send the dispute document via email after generation.
                     </p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="mb-1 block text-sm font-medium text-brand-primary">
                       Recipient Name (Optional)
                     </label>
                     <input
@@ -167,7 +168,7 @@ export default function GenerateDisputeModal({
                       value={recipientName}
                       onChange={(e) => setRecipientName(e.target.value)}
                       placeholder="Carrier Name"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="input-brand w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#4f8ef7]/40"
                     />
                   </div>
                 </div>
@@ -175,15 +176,17 @@ export default function GenerateDisputeModal({
 
               <div className="flex justify-end gap-3 pt-4">
                 <button
+                  type="button"
                   onClick={onClose}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                  className="rounded-md border border-brand-border bg-brand-surface-muted px-4 py-2 text-sm font-medium text-brand-primary hover:bg-brand-background"
                 >
                   Cancel
                 </button>
                 <button
+                  type="button"
                   onClick={handleGenerate}
                   disabled={generating}
-                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn-brand-primary rounded-md px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {generating ? 'Generating...' : 'Generate PDF'}
                 </button>
@@ -193,8 +196,8 @@ export default function GenerateDisputeModal({
 
           {step === 'send' && disputeDocumentId && (
             <div className="space-y-4">
-              <div className="p-4 bg-green-50 border border-green-200 rounded-md">
-                <p className="text-sm text-green-800">
+              <div className="rounded-md border border-brand-border bg-brand-success-soft p-4">
+                <p className="text-sm text-brand-success">
                   ✓ Dispute document generated successfully!
                 </p>
                 {pdfUrl && (
@@ -202,7 +205,7 @@ export default function GenerateDisputeModal({
                     href={pdfUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-2 inline-block text-sm text-indigo-600 hover:text-indigo-800"
+                    className="mt-2 inline-block text-sm font-medium text-[#4f8ef7] hover:underline dark:text-[#7dd3fc]"
                   >
                     View PDF →
                   </a>
@@ -211,7 +214,7 @@ export default function GenerateDisputeModal({
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="mb-1 block text-sm font-medium text-brand-primary">
                     Recipient Email *
                   </label>
                   <input
@@ -219,12 +222,12 @@ export default function GenerateDisputeModal({
                     value={recipientEmail}
                     onChange={(e) => setRecipientEmail(e.target.value)}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="input-brand w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#4f8ef7]/40"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="mb-1 block text-sm font-medium text-brand-primary">
                     Recipient Name
                   </label>
                   <input
@@ -232,12 +235,12 @@ export default function GenerateDisputeModal({
                     value={recipientName}
                     onChange={(e) => setRecipientName(e.target.value)}
                     placeholder="Carrier Name"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="input-brand w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#4f8ef7]/40"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="mb-1 block text-sm font-medium text-brand-primary">
                     Email Subject
                   </label>
                   <input
@@ -245,12 +248,12 @@ export default function GenerateDisputeModal({
                     value={emailSubject}
                     onChange={(e) => setEmailSubject(e.target.value)}
                     placeholder="Dispute Letter - Invoice [Number]"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="input-brand w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#4f8ef7]/40"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="mb-1 block text-sm font-medium text-brand-primary">
                     Email Message
                   </label>
                   <textarea
@@ -258,27 +261,29 @@ export default function GenerateDisputeModal({
                     onChange={(e) => setEmailMessage(e.target.value)}
                     rows={6}
                     placeholder="Dear [Carrier],&#10;&#10;Please find attached our dispute letter..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="input-brand w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#4f8ef7]/40"
                   />
                 </div>
               </div>
 
               <div className="flex justify-end gap-3 pt-4">
                 <button
+                  type="button"
                   onClick={() => {
                     setStep('generate');
                     queryClient.invalidateQueries({ queryKey: ['invoices'] });
                     onSuccess();
                     onClose();
                   }}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                  className="rounded-md border border-brand-border bg-brand-surface-muted px-4 py-2 text-sm font-medium text-brand-primary hover:bg-brand-background"
                 >
                   Skip Email
                 </button>
                 <button
+                  type="button"
                   onClick={handleSend}
                   disabled={sending || !recipientEmail}
-                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn-brand-primary rounded-md px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {sending ? 'Sending...' : 'Send Email'}
                 </button>

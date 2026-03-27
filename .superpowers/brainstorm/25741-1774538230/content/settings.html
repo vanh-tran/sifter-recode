@@ -1,0 +1,202 @@
+<style>
+  .mockup-shell { background: #111; border: 1.5px solid #2a2a2a; border-radius: 10px; overflow: hidden; font-size: 12px; }
+  .top-bar { background: #161616; border-bottom: 1px solid #2a2a2a; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; }
+  .top-bar .logo { font-weight: 700; font-size: 14px; color: #fff; letter-spacing: -0.3px; }
+  .top-bar .logo span { color: #4f8ef7; }
+  .top-bar .nav { display: flex; gap: 20px; font-size: 12px; color: #888; }
+  .top-bar .nav .active { color: #fff; }
+  .top-bar .user { font-size: 11px; color: #666; }
+
+  .settings-layout { display: flex; min-height: 400px; }
+  .settings-nav { width: 160px; flex-shrink: 0; border-right: 1px solid #1e1e1e; padding: 14px 0; }
+  .settings-nav-item { padding: 7px 16px; font-size: 12px; color: #666; cursor: pointer; }
+  .settings-nav-item:hover { color: #aaa; }
+  .settings-nav-item.active { color: #fff; background: #1a1a1a; border-right: 2px solid #4f8ef7; }
+  .settings-nav-section { padding: 12px 16px 4px; font-size: 10px; color: #333; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .settings-content { flex: 1; padding: 20px 24px; overflow: hidden; }
+  .section-title { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+  .section-sub { font-size: 11px; color: #555; margin-bottom: 20px; }
+
+  /* Team table */
+  .team-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .btn-primary { font-size: 11px; padding: 6px 12px; background: #4f8ef7; color: #fff; border-radius: 5px; font-weight: 600; cursor: pointer; }
+
+  .member-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #1a1a1a; }
+  .member-row:last-child { border-bottom: none; }
+  .member-avatar { width: 28px; height: 28px; border-radius: 50%; background: #1e2a3a; display: flex; align-items: center; justify-content: font-weight; font-size: 11px; font-weight: 700; color: #4f8ef7; align-items: center; justify-content: center; flex-shrink: 0; }
+  .member-info { flex: 1; }
+  .member-name { font-size: 12px; color: #e0e0e0; font-weight: 500; }
+  .member-email { font-size: 10px; color: #555; }
+
+  .role-badge { font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 600; }
+  .role-badge.owner { background: rgba(247,162,79,0.1); color: #f7a24f; border: 1px solid rgba(247,162,79,0.2); }
+  .role-badge.admin { background: rgba(160,79,247,0.1); color: #c47cf7; border: 1px solid rgba(160,79,247,0.2); }
+  .role-badge.member { background: rgba(79,142,247,0.1); color: #4f8ef7; border: 1px solid rgba(79,142,247,0.2); }
+  .role-badge.viewer { background: rgba(100,100,100,0.1); color: #666; border: 1px solid #2a2a2a; }
+  .role-badge.invited { background: rgba(100,100,100,0.08); color: #555; border: 1px solid #222; font-style: italic; }
+
+  .member-action { font-size: 11px; color: #444; cursor: pointer; }
+  .member-action:hover { color: #888; }
+
+  /* Invite modal overlay */
+  .invite-modal { background: #1a1a1a; border: 1px solid #333; border-radius: 8px; padding: 16px; margin-top: 16px; }
+  .invite-modal-title { font-size: 12px; font-weight: 700; color: #fff; margin-bottom: 12px; }
+  .invite-row { display: flex; gap: 8px; align-items: center; }
+  .mock-input { background: #111; border: 1px solid #2a2a2a; border-radius: 5px; padding: 6px 10px; color: #aaa; font-size: 11px; }
+  .mock-input.email { flex: 1; }
+  .mock-select { background: #111; border: 1px solid #2a2a2a; border-radius: 5px; padding: 6px 10px; color: #aaa; font-size: 11px; width: 100px; }
+  .invite-note { font-size: 10px; color: #444; margin-top: 8px; }
+
+  /* Mailboxes */
+  .mailbox-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #1a1a1a; }
+  .mailbox-row:last-child { border-bottom: none; }
+  .provider-icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+  .provider-icon.gmail { background: rgba(234,67,53,0.15); color: #ea4335; }
+  .provider-icon.outlook { background: rgba(0,120,212,0.15); color: #0078d4; }
+  .mailbox-info { flex: 1; }
+  .mailbox-email { font-size: 12px; color: #e0e0e0; }
+  .mailbox-meta { font-size: 10px; color: #555; }
+  .status-dot-active { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #4fcf7a; margin-right: 4px; }
+  .btn-ghost { font-size: 11px; padding: 4px 10px; background: transparent; color: #666; border-radius: 5px; cursor: pointer; border: 1px solid #2a2a2a; }
+  .btn-danger { font-size: 11px; padding: 4px 10px; background: transparent; color: #f74f4f; border-radius: 5px; cursor: pointer; border: 1px solid rgba(247,79,79,0.3); }
+
+  /* Org settings */
+  .form-group { margin-bottom: 14px; }
+  .form-label { font-size: 10px; color: #555; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.4px; }
+  .form-input { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 5px; padding: 7px 10px; color: #aaa; font-size: 12px; width: 280px; display: block; }
+</style>
+
+<h2>Settings</h2>
+<p class="subtitle">Manage your team, connected mailboxes, and organization details.</p>
+
+<div class="mockup-shell">
+  <div class="top-bar">
+    <div class="logo"><span>Sifter</span></div>
+    <div class="nav">
+      <span>Invoices</span>
+      <span>Disputes</span>
+      <span>Carriers</span>
+      <span class="active">Settings</span>
+    </div>
+    <div class="user">Acme Logistics · Sarah K.</div>
+  </div>
+
+  <div class="settings-layout">
+    <div class="settings-nav">
+      <div class="settings-nav-section">Workspace</div>
+      <div class="settings-nav-item active">Team</div>
+      <div class="settings-nav-item">Mailboxes</div>
+      <div class="settings-nav-item">Organization</div>
+    </div>
+
+    <!-- TEAM TAB (shown) -->
+    <div class="settings-content">
+      <div class="section-title">Team</div>
+      <div class="section-sub">Invite teammates and manage their access level.</div>
+
+      <div class="team-header">
+        <span style="font-size:11px;color:#555">4 members</span>
+        <div class="btn-primary">+ Invite member</div>
+      </div>
+
+      <!-- Invite form (expanded state) -->
+      <div class="invite-modal">
+        <div class="invite-modal-title">Invite a teammate</div>
+        <div class="invite-row">
+          <div class="mock-input email">colleague@acmelogistics.com</div>
+          <select class="mock-select">
+            <option>Member</option>
+            <option>Admin</option>
+            <option>Viewer</option>
+          </select>
+          <div class="btn-primary">Send invite</div>
+        </div>
+        <div class="invite-note">They'll receive an email with a link to join Acme Logistics on Sifter. Owner role can only be transferred, not assigned.</div>
+      </div>
+
+      <div style="margin-top:16px">
+        <div class="member-row">
+          <div class="member-avatar">SK</div>
+          <div class="member-info">
+            <div class="member-name">Sarah K. <span style="font-size:10px;color:#555">(you)</span></div>
+            <div class="member-email">sarah@acmelogistics.com</div>
+          </div>
+          <span class="role-badge owner">Owner</span>
+          <span class="member-action" style="color:#333">—</span>
+        </div>
+        <div class="member-row">
+          <div class="member-avatar" style="background:#2a1e3a;color:#c47cf7">MR</div>
+          <div class="member-info">
+            <div class="member-name">Marcus R.</div>
+            <div class="member-email">marcus@acmelogistics.com</div>
+          </div>
+          <span class="role-badge admin">Admin</span>
+          <span class="member-action">Change role</span>
+        </div>
+        <div class="member-row">
+          <div class="member-avatar">JL</div>
+          <div class="member-info">
+            <div class="member-name">Jamie L.</div>
+            <div class="member-email">jamie@acmelogistics.com</div>
+          </div>
+          <span class="role-badge member">Member</span>
+          <span class="member-action">Change role</span>
+        </div>
+        <div class="member-row">
+          <div class="member-avatar" style="background:#1a1a1a;color:#444">?</div>
+          <div class="member-info">
+            <div class="member-name" style="color:#555">pending@acmelogistics.com</div>
+            <div class="member-email">Invited Mar 20</div>
+          </div>
+          <span class="role-badge invited">Invited · Viewer</span>
+          <span class="member-action">Revoke</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:24px">
+<div class="mockup-shell">
+  <div class="top-bar">
+    <div class="logo"><span>Sifter</span></div>
+    <div class="nav">
+      <span>Invoices</span><span>Disputes</span><span>Carriers</span><span class="active">Settings</span>
+    </div>
+    <div class="user">Acme Logistics · Sarah K.</div>
+  </div>
+  <div class="settings-layout">
+    <div class="settings-nav">
+      <div class="settings-nav-section">Workspace</div>
+      <div class="settings-nav-item">Team</div>
+      <div class="settings-nav-item active">Mailboxes</div>
+      <div class="settings-nav-item">Organization</div>
+    </div>
+    <div class="settings-content">
+      <div class="section-title">Mailboxes</div>
+      <div class="section-sub">Sifter polls connected mailboxes every 15 minutes for new freight invoices.</div>
+
+      <div class="mailbox-row">
+        <div class="provider-icon gmail">G</div>
+        <div class="mailbox-info">
+          <div class="mailbox-email">ap@acmelogistics.com</div>
+          <div class="mailbox-meta"><span class="status-dot-active"></span>Active · Last synced 8 min ago · Gmail</div>
+        </div>
+        <div class="btn-danger">Disconnect</div>
+      </div>
+      <div class="mailbox-row">
+        <div class="provider-icon outlook">O</div>
+        <div class="mailbox-info">
+          <div class="mailbox-email">freight@acmelogistics.com</div>
+          <div class="mailbox-meta"><span class="status-dot-active"></span>Active · Last synced 2 min ago · Outlook</div>
+        </div>
+        <div class="btn-danger">Disconnect</div>
+      </div>
+      <div style="margin-top:14px">
+        <div class="btn-ghost">+ Connect another mailbox</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>

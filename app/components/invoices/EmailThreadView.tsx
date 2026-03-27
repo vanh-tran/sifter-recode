@@ -93,14 +93,14 @@ function ReplyModal({ to, cc, subject, onSend, onClose }: ReplyModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+      <div className="mx-4 w-full max-w-2xl rounded-lg border border-brand-border bg-brand-surface shadow-xl">
         <div className="p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Compose Reply</h3>
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-brand-primary">Compose reply</h3>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
+              className="text-brand-muted-light hover:text-brand-muted"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -109,51 +109,51 @@ function ReplyModal({ to, cc, subject, onSend, onClose }: ReplyModalProps) {
           </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-800 rounded-md text-sm">
+            <div className="mb-4 rounded-md border border-brand-border bg-brand-destructive-soft p-3 text-sm text-brand-destructive">
               {error}
             </div>
           )}
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
+              <label className="block text-sm font-medium text-brand-primary mb-1">To</label>
               <input
                 type="text"
                 value={to.join(', ')}
                 readOnly
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600"
+                className="w-full px-3 py-2 input-brand rounded-md border bg-brand-surface-muted text-brand-muted"
               />
             </div>
 
             {cc.length > 0 && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">CC</label>
+                <label className="block text-sm font-medium text-brand-primary mb-1">CC</label>
                 <input
                   type="text"
                   value={cc.join(', ')}
                   readOnly
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600"
+                  className="w-full px-3 py-2 input-brand rounded-md border bg-brand-surface-muted text-brand-muted"
                 />
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+              <label className="block text-sm font-medium text-brand-primary mb-1">Subject</label>
               <input
                 type="text"
                 value={subject}
                 readOnly
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600"
+                className="w-full px-3 py-2 input-brand rounded-md border bg-brand-surface-muted text-brand-muted"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+              <label className="block text-sm font-medium text-brand-primary mb-1">Message</label>
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 rows={10}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="input-brand w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#4f8ef7]/40"
                 placeholder="Type your message here..."
               />
             </div>
@@ -163,14 +163,14 @@ function ReplyModal({ to, cc, subject, onSend, onClose }: ReplyModalProps) {
             <button
               onClick={onClose}
               disabled={sending}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50"
+              className="rounded-md border border-brand-border bg-brand-surface-muted px-4 py-2 text-sm font-medium text-brand-primary hover:bg-brand-background disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               onClick={handleSend}
               disabled={sending || !message.trim()}
-              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-brand-primary rounded-md px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
             >
               {sending ? 'Sending...' : 'Send'}
             </button>
@@ -342,11 +342,11 @@ export default function EmailThreadView({ disputeDocumentId, onClose }: EmailThr
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="mx-4 max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-lg border border-brand-border bg-brand-surface shadow-xl">
           <div className="p-6">
             <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
-              <p className="mt-4 text-sm text-gray-500">Loading email thread...</p>
+              <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-brand-border border-t-[#4f8ef7]" />
+              <p className="mt-4 text-sm text-brand-muted">Loading email thread...</p>
             </div>
           </div>
         </div>
@@ -357,13 +357,13 @@ export default function EmailThreadView({ disputeDocumentId, onClose }: EmailThr
   return (
     <>
       <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] flex flex-col">
-          <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-            <h2 className="text-xl font-semibold text-gray-900">Email Thread</h2>
+        <div className="mx-4 flex max-h-[90vh] w-full max-w-4xl flex-col rounded-lg border border-brand-border bg-brand-surface shadow-xl">
+          <div className="flex items-center justify-between border-b border-brand-border p-4">
+            <h2 className="text-xl font-semibold text-brand-primary">Email Thread</h2>
             <div className="flex items-center gap-2">
               <button
                 onClick={handleRefresh}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md"
+                className="rounded-md p-2 text-brand-muted hover:bg-brand-surface-muted hover:text-brand-primary"
                 title="Refresh"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -372,7 +372,7 @@ export default function EmailThreadView({ disputeDocumentId, onClose }: EmailThr
               </button>
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-brand-muted-light hover:text-brand-muted"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -383,13 +383,13 @@ export default function EmailThreadView({ disputeDocumentId, onClose }: EmailThr
 
           <div className="flex-1 overflow-y-auto p-4">
             {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-800 rounded-md text-sm">
+              <div className="mb-4 rounded-md border border-brand-border bg-brand-destructive-soft p-3 text-sm text-brand-destructive">
                 {error}
               </div>
             )}
 
             {messages.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
+              <div className="text-center py-12 text-brand-muted">
                 <p className="text-sm">No email messages found in this thread.</p>
               </div>
             ) : (
@@ -399,7 +399,7 @@ export default function EmailThreadView({ disputeDocumentId, onClose }: EmailThr
                     <button
                       onClick={handleLoadMore}
                       disabled={loadingMore}
-                      className="text-sm text-indigo-600 hover:text-indigo-800 disabled:opacity-50"
+                      className="text-sm text-[#4f8ef7] hover:underline disabled:opacity-50 dark:text-[#7dd3fc]"
                     >
                       {loadingMore ? 'Loading...' : `Load ${messages.length > 0 ? 'older' : ''} messages`}
                     </button>
@@ -414,11 +414,11 @@ export default function EmailThreadView({ disputeDocumentId, onClose }: EmailThr
                   return (
                     <div
                       key={message.id}
-                      className="border-b border-gray-200 pb-4 last:border-b-0"
+                      className="border-b border-brand-border pb-4 last:border-b-0"
                     >
                       <div className="flex items-start gap-3">
                         <div className="flex-shrink-0">
-                          <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-medium text-sm">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-pastel-blue text-sm font-medium text-pastel-blue-text">
                             {getInitials(message.from.name, message.from.email)}
                           </div>
                         </div>
@@ -426,25 +426,25 @@ export default function EmailThreadView({ disputeDocumentId, onClose }: EmailThr
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between mb-1">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-medium text-gray-900">
+                              <span className="font-medium text-brand-primary">
                                 {message.from.name || message.from.email}
                               </span>
-                              <span className="text-sm text-gray-500">
+                              <span className="text-sm text-brand-muted">
                                 &lt;{message.from.email}&gt;
                               </span>
                               {message.cc.length > 0 && (
-                                <span className="text-xs text-gray-400">
+                                <span className="text-xs text-brand-muted-light">
                                   CC: {message.cc.join(', ')}
                                 </span>
                               )}
                             </div>
                             <div className="flex items-center gap-2">
-                              <span className="text-xs text-gray-500 whitespace-nowrap">
+                              <span className="text-xs text-brand-muted whitespace-nowrap">
                                 {formatDate(message.date)}
                               </span>
                               <button
                                 onClick={() => handleReply(message)}
-                                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+                                className="rounded p-1.5 text-brand-muted-light hover:bg-brand-surface-muted hover:text-brand-muted"
                                 title="Reply"
                               >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -455,13 +455,13 @@ export default function EmailThreadView({ disputeDocumentId, onClose }: EmailThr
                           </div>
 
                           {message.subject && (
-                            <div className="text-sm font-medium text-gray-700 mb-2">
+                            <div className="text-sm font-medium text-brand-primary mb-2">
                               {message.subject}
                             </div>
                           )}
 
                           {showFull ? (
-                            <div className="text-sm text-gray-700">
+                            <div className="text-sm text-brand-primary">
                               {message.html ? (
                                 <SanitizedEmailBody html={message.html} text={message.text} />
                               ) : (
@@ -473,18 +473,18 @@ export default function EmailThreadView({ disputeDocumentId, onClose }: EmailThr
                                   {message.attachments.map((attachment) => (
                                     <div
                                       key={attachment.attachmentId}
-                                      className="flex items-center gap-2 p-2 bg-gray-50 rounded border border-gray-200"
+                                      className="flex items-center gap-2 rounded border border-brand-border bg-brand-surface-muted p-2"
                                     >
-                                      <span className="text-sm text-gray-600">📎</span>
-                                      <span className="text-sm text-gray-700 flex-1">{attachment.filename}</span>
-                                      <span className="text-xs text-gray-500">
+                                      <span className="text-sm text-brand-muted">📎</span>
+                                      <span className="text-sm text-brand-primary flex-1">{attachment.filename}</span>
+                                      <span className="text-xs text-brand-muted">
                                         {(attachment.size / 1024).toFixed(1)} KB
                                       </span>
                                       <a
                                         href={`/api/disputes/${disputeDocumentId}/attachments/${message.gmail_message_id}/${attachment.attachmentId}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-xs text-indigo-600 hover:text-indigo-800"
+                                        className="text-xs text-[#4f8ef7] hover:underline dark:text-[#7dd3fc]"
                                       >
                                         Download
                                       </a>
@@ -494,11 +494,11 @@ export default function EmailThreadView({ disputeDocumentId, onClose }: EmailThr
                               )}
                             </div>
                           ) : (
-                            <div className="text-sm text-gray-600">
+                            <div className="text-sm text-brand-muted">
                               {message.snippet}
                               <button
                                 onClick={() => toggleExpand(message.id)}
-                                className="ml-2 text-indigo-600 hover:text-indigo-800 text-xs"
+                                className="ml-2 text-xs text-[#4f8ef7] hover:underline dark:text-[#7dd3fc]"
                               >
                                 Show more
                               </button>
@@ -515,13 +515,13 @@ export default function EmailThreadView({ disputeDocumentId, onClose }: EmailThr
           </div>
 
           {messages.length > 0 && (
-            <div className="p-4 border-t border-gray-200">
+            <div className="border-t border-brand-border p-4">
               <button
                 onClick={() => {
                   const lastMessage = messages[messages.length - 1];
                   handleReply(lastMessage);
                 }}
-                className="w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
+                className="btn-brand-primary w-full rounded-md px-4 py-2 text-sm font-medium"
               >
                 Reply
               </button>

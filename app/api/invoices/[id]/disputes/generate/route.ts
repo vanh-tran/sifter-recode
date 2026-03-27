@@ -8,6 +8,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { generateDisputePdf } from '@/lib/pdf/generateDisputePdf';
 import { getAuthOrgContext } from '@/lib/server/auth-context';
+import { requirePermission } from '@/lib/server/rbac';
 import { generatePresignedUrl } from '@/lib/server/gcs-presigned';
 import { isValidUuid } from '@/lib/utils';
 import { NextRequest, NextResponse } from 'next/server';
@@ -24,7 +25,10 @@ export async function POST(
     if (!authContext) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const { orgId, userId } = authContext;
+    const { orgId, userId, role } = authContext;
+
+    const denied = requirePermission(role, 'disputes:create');
+    if (denied) return denied;
 
     // Handle both sync and async params (Next.js 15+ compatibility)
     const resolvedParams = 'then' in params ? await params : params;
@@ -34,8 +38,12 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid invoice ID' }, { status: 400 });
     }
 
-    // Parse request body
-    const body = await request.json();
+    let body: Record<string, unknown>;
+    try {
+      body = (await request.json()) as Record<string, unknown>;
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
     const { approved_finding_ids, recipient_email, recipient_name } = body;
 
     if (!approved_finding_ids || !Array.isArray(approved_finding_ids) || approved_finding_ids.length === 0) {
@@ -79,7 +87,7 @@ export async function POST(
       .from('findings')
       .select(`
         id,
-        leak_type,
+        finding_type,
         rule_id,
         summary,
         reasoning,
@@ -99,7 +107,7 @@ export async function POST(
     if (findingsError) {
       console.error('Error fetching findings:', findingsError);
       return NextResponse.json(
-        { error: 'Failed to fetch findings' },
+        { error: 'Internal server error' },
         { status: 500 }
       );
     }
@@ -150,7 +158,7 @@ export async function POST(
       },
       findings.map(f => ({
         id: f.id,
-        leak_type: f.leak_type,
+        leak_type: f.finding_type,
         rule_id: f.rule_id,
         summary: f.summary,
         reasoning: f.reasoning,
@@ -214,7 +222,7 @@ export async function POST(
   } catch (error) {
     console.error('Error generating dispute PDF:', error);
     return NextResponse.json(
-      { error: 'Failed to generate dispute PDF' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

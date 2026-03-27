@@ -50,25 +50,25 @@ export default function FindingApprovalToggle({
   return (
     <div className="flex items-center gap-2">
       {error && (
-        <span className="text-xs text-red-600" title={error}>
+        <span className="text-xs text-brand-destructive" title={error}>
           ⚠️
         </span>
       )}
-      <label className="relative inline-flex items-center cursor-pointer">
+      <label className="relative inline-flex cursor-pointer items-center">
         <input
           type="checkbox"
           checked={isApproved}
           onChange={handleToggle}
           disabled={loading}
-          className="sr-only peer"
+          className="peer sr-only"
         />
-        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-        <span className="ml-3 text-sm font-medium text-gray-700">
+        <div className="peer h-6 w-11 rounded-full bg-brand-surface-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#4f8ef7]/30 peer-checked:bg-[#4f8ef7] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-brand-border after:bg-brand-surface after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-transparent"></div>
+        <span className="ml-3 text-sm font-medium text-brand-primary">
           {isApproved ? 'Approved' : 'Approve'}
         </span>
       </label>
       {loading && (
-        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600"></div>
+        <div className="h-4 w-4 animate-spin rounded-full border-2 border-brand-border border-t-[#4f8ef7]" />
       )}
     </div>
   );

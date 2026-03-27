@@ -7,6 +7,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { getAuthOrgContext } from '@/lib/server/auth-context';
+import { requirePermission } from '@/lib/server/rbac';
 import { isValidUuid } from '@/lib/utils';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -22,7 +23,10 @@ export async function PATCH(
     if (!authContext) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const { userId, orgId } = authContext;
+    const { userId, orgId, role } = authContext;
+
+    const denied = requirePermission(role, 'disputes:create');
+    if (denied) return denied;
 
     const resolvedParams = 'then' in params ? await params : params;
     const findingId = resolvedParams.id;
@@ -91,7 +95,7 @@ export async function PATCH(
     if (updateError) {
       console.error('Error updating finding approval:', updateError);
       return NextResponse.json(
-        { error: 'Failed to update finding approval status' },
+        { error: 'Internal server error' },
         { status: 500 }
       );
     }
@@ -99,7 +103,7 @@ export async function PATCH(
     if (!updatedFinding) {
       console.error('Update returned no rows - RLS policy may be blocking update');
       return NextResponse.json(
-        { error: 'Failed to update finding approval status' },
+        { error: 'Internal server error' },
         { status: 500 }
       );
     }

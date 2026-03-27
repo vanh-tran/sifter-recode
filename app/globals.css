@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Class-based dark mode (toggle via `class="dark"` on <html>) */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ============================================
    SIFTER BRAND DESIGN TOKENS
    Official brand guide (logo + body fonts & colors)
@@ -101,16 +104,54 @@
   --font-brand-logo: var(--font-brand-logo);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --brand-background: #0a0a0a;
-    --brand-divider-bg: #0a0a0a;
-    --brand-surface: #0f0f10;
-    --brand-surface-muted: #111827;
-    --brand-primary-hover: #111827;
-  }
+/* Dark theme: add `class="dark"` on <html> (ThemeProvider + ThemeScript). */
+.dark {
+  --background: #111111;
+  --foreground: #f4f4f5;
+  --brand-primary: #f4f4f5;
+  --brand-charcoal: #e5e5e5;
+  --brand-background: #111111;
+  --brand-background-subtle: rgba(255, 255, 255, 0.04);
+  --brand-background-grid: rgba(255, 255, 255, 0.02);
+  --brand-muted: #a1a1aa;
+  --brand-muted-light: #71717a;
+  --brand-border: #2a2a2a;
+  --brand-border-focus: #4f8ef7;
+  --brand-input-placeholder: #71717a;
+  --brand-divider-bg: #161616;
+  --brand-surface: #161616;
+  --brand-surface-muted: #1c1c1c;
+  --brand-primary-hover: #d4d4d8;
+
+  --brand-destructive: #f87171;
+  --brand-destructive-soft: rgba(248, 113, 113, 0.12);
+  --brand-warning: #fbbf24;
+  --brand-warning-soft: rgba(251, 191, 36, 0.12);
+  --brand-success: #4ade80;
+  --brand-success-soft: rgba(74, 222, 128, 0.12);
+
+  /* Pastels: dark-tinted surfaces (readable on #161616) */
+  --pastel-blue: rgba(56, 189, 248, 0.12);
+  --pastel-blue-text: #7dd3fc;
+  --pastel-lavender: rgba(167, 139, 250, 0.12);
+  --pastel-lavender-text: #c4b5fd;
+  --pastel-mint: rgba(52, 211, 153, 0.12);
+  --pastel-mint-text: #6ee7b7;
+  --pastel-rose: rgba(251, 113, 133, 0.14);
+  --pastel-rose-text: #fda4af;
+  --pastel-amber: rgba(251, 191, 36, 0.12);
+  --pastel-amber-text: #fcd34d;
+}
+
+.dark .btn-brand-primary {
+  background-color: #4f8ef7;
+  color: #fff;
+}
+.dark .btn-brand-primary:hover:not(:disabled) {
+  background-color: #3b7ae8;
+}
+.dark .btn-brand-primary:disabled {
+  background-color: #52525b;
 }
 
 body {
@@ -194,6 +235,11 @@ body {
   outline: none;
   border-color: var(--brand-border-focus);
   box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.2);
+}
+
+.dark .input-brand {
+  background-color: var(--brand-surface-muted);
+  color: var(--brand-primary);
 }
 
 .link-brand {

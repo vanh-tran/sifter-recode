@@ -54,17 +54,44 @@ export default function DisputeDocumentsList({ invoiceId }: DisputeDocumentsList
 
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; className: string }> = {
-      draft: { label: 'Draft', className: 'bg-gray-100 text-gray-800' },
-      generated: { label: 'Generated', className: 'bg-blue-100 text-blue-800' },
-      sent: { label: 'Sent', className: 'bg-yellow-100 text-yellow-800' },
-      acknowledged: { label: 'Acknowledged', className: 'bg-green-100 text-green-800' },
-      resolved: { label: 'Resolved', className: 'bg-green-100 text-green-800' },
-      cancelled: { label: 'Cancelled', className: 'bg-red-100 text-red-800' },
+      draft: {
+        label: 'Draft',
+        className:
+          'bg-brand-surface-muted text-brand-muted border border-brand-border',
+      },
+      generated: {
+        label: 'Generated',
+        className:
+          'bg-pastel-blue text-pastel-blue-text border border-sky-200/80 dark:border-sky-400/25',
+      },
+      sent: {
+        label: 'Sent',
+        className:
+          'bg-pastel-amber text-pastel-amber-text border border-amber-200/80 dark:border-amber-400/25',
+      },
+      acknowledged: {
+        label: 'Acknowledged',
+        className:
+          'bg-pastel-mint text-pastel-mint-text border border-emerald-200/80 dark:border-emerald-400/25',
+      },
+      resolved: {
+        label: 'Resolved',
+        className:
+          'bg-pastel-mint text-pastel-mint-text border border-emerald-200/80 dark:border-emerald-400/25',
+      },
+      cancelled: {
+        label: 'Cancelled',
+        className:
+          'bg-pastel-rose text-pastel-rose-text border border-rose-200/80 dark:border-rose-400/25',
+      },
     };
 
-    const config = statusConfig[status] || { label: status, className: 'bg-gray-100 text-gray-800' };
+    const config = statusConfig[status] || {
+      label: status,
+      className: 'bg-brand-surface-muted text-brand-muted border border-brand-border',
+    };
     return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full ${config.className}`}>
+      <span className={`rounded-full px-2 py-1 text-xs font-medium ${config.className}`}>
         {config.label}
       </span>
     );
@@ -82,16 +109,16 @@ export default function DisputeDocumentsList({ invoiceId }: DisputeDocumentsList
 
   if (loading) {
     return (
-      <div className="text-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
-        <p className="mt-4 text-sm text-gray-500">Loading dispute documents...</p>
+      <div className="py-8 text-center">
+        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-brand-border border-t-[#4f8ef7]" />
+        <p className="mt-4 text-sm text-brand-muted">Loading dispute documents…</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md">
+      <div className="rounded-md border border-brand-border bg-brand-destructive-soft px-4 py-3 text-brand-destructive">
         {error}
       </div>
     );
@@ -99,7 +126,7 @@ export default function DisputeDocumentsList({ invoiceId }: DisputeDocumentsList
 
   if (disputes.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
+      <div className="py-8 text-center text-brand-muted">
         <p className="text-sm">No dispute documents generated yet.</p>
       </div>
     );
@@ -107,22 +134,22 @@ export default function DisputeDocumentsList({ invoiceId }: DisputeDocumentsList
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Dispute Documents</h3>
+      <h3 className="mb-4 text-lg font-semibold text-brand-primary">Dispute documents</h3>
       <div className="space-y-3">
         {disputes.map((dispute) => (
           <div
             key={dispute.id}
-            className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+            className="cursor-pointer rounded-lg border border-brand-border bg-brand-background p-4 transition-shadow hover:shadow-md"
             onClick={() => setSelectedDispute(dispute)}
           >
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <h4 className="text-sm font-medium text-gray-900">{dispute.filename}</h4>
+                <div className="mb-2 flex items-center gap-3">
+                  <h4 className="text-sm font-medium text-brand-primary">{dispute.filename}</h4>
                   {getStatusBadge(dispute.status)}
                 </div>
 
-                <div className="text-xs text-gray-500 space-y-1">
+                <div className="space-y-1 text-xs text-brand-muted">
                   <p>Created: {formatDate(dispute.created_at)}</p>
                   {dispute.recipient_email && (
                     <p>Recipient: {dispute.recipient_name || dispute.recipient_email}</p>
@@ -140,7 +167,7 @@ export default function DisputeDocumentsList({ invoiceId }: DisputeDocumentsList
                       e.stopPropagation();
                       setViewingThreadId(dispute.id);
                     }}
-                    className="px-3 py-1 text-xs font-medium text-indigo-600 hover:text-indigo-800"
+                    className="px-3 py-1 text-xs font-medium text-[#4f8ef7] hover:underline dark:text-[#7dd3fc]"
                   >
                     View Thread
                   </button>

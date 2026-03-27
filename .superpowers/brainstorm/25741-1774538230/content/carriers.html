@@ -1,0 +1,171 @@
+<style>
+  .mockup-shell { background: #111; border: 1.5px solid #2a2a2a; border-radius: 10px; overflow: hidden; font-size: 12px; }
+  .top-bar { background: #161616; border-bottom: 1px solid #2a2a2a; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; }
+  .top-bar .logo { font-weight: 700; font-size: 14px; color: #fff; letter-spacing: -0.3px; }
+  .top-bar .logo span { color: #4f8ef7; }
+  .top-bar .nav { display: flex; gap: 20px; font-size: 12px; color: #888; }
+  .top-bar .nav .active { color: #fff; }
+  .top-bar .user { font-size: 11px; color: #666; }
+
+  .page-header { padding: 16px 20px 0; display: flex; align-items: center; justify-content: space-between; }
+  .page-title { font-size: 15px; font-weight: 700; color: #fff; }
+  .page-sub { font-size: 11px; color: #555; margin-top: 2px; }
+  .btn-primary { font-size: 11px; padding: 6px 12px; background: #4f8ef7; color: #fff; border-radius: 5px; font-weight: 600; cursor: pointer; border: none; }
+  .btn-ghost { font-size: 11px; padding: 5px 10px; background: transparent; color: #666; border-radius: 5px; cursor: pointer; border: 1px solid #2a2a2a; }
+
+  .carrier-list { padding: 14px 20px; display: flex; flex-direction: column; gap: 10px; }
+
+  .carrier-card { background: #161616; border: 1px solid #2a2a2a; border-radius: 8px; overflow: hidden; }
+  .carrier-card.expanded { border-color: #333; }
+
+  .carrier-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; cursor: pointer; }
+  .carrier-row:hover { background: #1a1a1a; }
+
+  .carrier-icon { width: 32px; height: 32px; border-radius: 6px; background: #1e2a3a; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #4f8ef7; flex-shrink: 0; }
+  .carrier-name { font-weight: 600; color: #e0e0e0; font-size: 12px; width: 140px; flex-shrink: 0; }
+  .carrier-scac { font-size: 10px; color: #555; width: 50px; flex-shrink: 0; }
+  .carrier-invoices { font-size: 11px; color: #666; width: 80px; flex-shrink: 0; }
+
+  .email-cell { display: flex; align-items: center; gap: 6px; flex: 1; }
+  .email-val { font-size: 11px; color: #888; }
+  .confirmed-badge { font-size: 9px; padding: 1px 6px; border-radius: 3px; background: rgba(79,207,122,0.1); color: #4fcf7a; border: 1px solid rgba(79,207,122,0.2); }
+  .unconfirmed-badge { font-size: 9px; padding: 1px 6px; border-radius: 3px; background: rgba(247,162,79,0.1); color: #f7a24f; border: 1px solid rgba(247,162,79,0.25); }
+
+  .rate-badge { font-size: 10px; padding: 2px 7px; border-radius: 4px; }
+  .rate-badge.has { background: rgba(79,142,247,0.1); color: #4f8ef7; border: 1px solid rgba(79,142,247,0.2); }
+  .rate-badge.none { background: rgba(100,100,100,0.08); color: #555; border: 1px solid #222; }
+
+  .chevron { font-size: 10px; color: #444; margin-left: auto; }
+
+  /* Expanded detail */
+  .carrier-detail { border-top: 1px solid #1e1e1e; padding: 14px; display: flex; gap: 20px; }
+  .detail-section { flex: 1; }
+  .detail-label { font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+
+  .email-edit-row { display: flex; align-items: center; gap: 8px; }
+  .mock-input { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 5px; padding: 5px 10px; color: #aaa; font-size: 11px; flex: 1; }
+
+  .rate-sheet-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #1a1a1a; }
+  .rate-sheet-row:last-child { border-bottom: none; }
+  .rs-name { font-size: 11px; color: #aaa; flex: 1; }
+  .rs-date { font-size: 10px; color: #555; }
+  .rs-current { font-size: 9px; padding: 1px 5px; background: rgba(79,142,247,0.1); color: #4f8ef7; border-radius: 3px; border: 1px solid rgba(79,142,247,0.2); }
+  .rs-old { font-size: 9px; padding: 1px 5px; color: #444; }
+  .upload-area { border: 1px dashed #2a2a2a; border-radius: 5px; padding: 10px; text-align: center; color: #444; font-size: 11px; margin-top: 8px; cursor: pointer; }
+  .upload-area:hover { border-color: #444; color: #666; }
+</style>
+
+<h2>Carriers</h2>
+<p class="subtitle">Carriers are auto-extracted from your invoice emails. Manage billing contacts and rate sheets here.</p>
+
+<div class="mockup-shell">
+  <div class="top-bar">
+    <div class="logo"><span>Sifter</span></div>
+    <div class="nav">
+      <span>Invoices</span>
+      <span>Disputes</span>
+      <span class="active">Carriers</span>
+      <span>Settings</span>
+    </div>
+    <div class="user">Acme Logistics · Sarah K.</div>
+  </div>
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">Carriers <span style="font-size:11px;font-weight:400;color:#555">6 carriers</span></div>
+      <div class="page-sub">Rate sheets improve audit accuracy from ~60% to ~90%</div>
+    </div>
+  </div>
+
+  <div class="carrier-list">
+
+    <!-- Collapsed carrier -->
+    <div class="carrier-card">
+      <div class="carrier-row">
+        <div class="carrier-icon">WE</div>
+        <div class="carrier-name">Werner Ent.</div>
+        <div class="carrier-scac">WERN</div>
+        <div class="carrier-invoices">34 invoices</div>
+        <div class="email-cell">
+          <span class="email-val">billing@werner.com</span>
+          <span class="confirmed-badge">Confirmed</span>
+        </div>
+        <span class="rate-badge has">Rate sheet · eff. Jan 1</span>
+        <div class="chevron">▼</div>
+      </div>
+    </div>
+
+    <!-- Expanded carrier -->
+    <div class="carrier-card expanded">
+      <div class="carrier-row" style="background:#181818">
+        <div class="carrier-icon">JB</div>
+        <div class="carrier-name">J.B. Hunt</div>
+        <div class="carrier-scac">JBHT</div>
+        <div class="carrier-invoices">28 invoices</div>
+        <div class="email-cell">
+          <span class="email-val">ap@jbhunt.com</span>
+          <span class="unconfirmed-badge">Unconfirmed</span>
+        </div>
+        <span class="rate-badge has">Rate sheet · eff. Feb 15</span>
+        <div class="chevron">▲</div>
+      </div>
+      <div class="carrier-detail">
+        <div class="detail-section">
+          <div class="detail-label">Billing email</div>
+          <div class="email-edit-row">
+            <div class="mock-input">ap@jbhunt.com</div>
+            <div class="btn-ghost">Save</div>
+          </div>
+          <div style="font-size:10px;color:#555;margin-top:6px">⚠ Not yet confirmed — will prompt for confirmation before first dispute is sent.</div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-label">Rate sheets</div>
+          <div class="rate-sheet-row">
+            <span class="rs-name">jbhunt-rates-feb2024.pdf</span>
+            <span class="rs-date">Feb 15, 2024</span>
+            <span class="rs-current">Current</span>
+          </div>
+          <div class="rate-sheet-row">
+            <span class="rs-name">jbhunt-rates-jan2024.pdf</span>
+            <span class="rs-date">Jan 1, 2024</span>
+            <span class="rs-old">Superseded</span>
+          </div>
+          <div class="upload-area">+ Upload new rate sheet</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- No rate sheet -->
+    <div class="carrier-card">
+      <div class="carrier-row">
+        <div class="carrier-icon">SC</div>
+        <div class="carrier-name">Schneider</div>
+        <div class="carrier-scac">SNDR</div>
+        <div class="carrier-invoices">19 invoices</div>
+        <div class="email-cell">
+          <span class="email-val">invoices@schneider.com</span>
+          <span class="confirmed-badge">Confirmed</span>
+        </div>
+        <span class="rate-badge none">No rate sheet</span>
+        <div class="chevron">▼</div>
+      </div>
+    </div>
+
+    <div class="carrier-card">
+      <div class="carrier-row">
+        <div class="carrier-icon">KL</div>
+        <div class="carrier-name">KLLM Trans.</div>
+        <div class="carrier-scac">KLLM</div>
+        <div class="carrier-invoices">11 invoices</div>
+        <div class="email-cell">
+          <span class="email-val">billing@kllm.com</span>
+          <span class="confirmed-badge">Confirmed</span>
+        </div>
+        <span class="rate-badge has">Rate sheet · eff. Mar 1</span>
+        <div class="chevron">▼</div>
+      </div>
+    </div>
+
+  </div>
+  <div style="padding:8px 20px 12px;font-size:10px;color:#444">Carriers are auto-detected from invoice emails — contact support to merge or rename a carrier.</div>
+</div>

@@ -1,0 +1,164 @@
+<style>
+  .shell { background: #111; border: 1.5px solid #2a2a2a; border-radius: 10px; overflow: hidden; font-size: 12px; }
+  .top-bar { background: #161616; border-bottom: 1px solid #2a2a2a; padding: 9px 16px; display: flex; align-items: center; gap: 10px; }
+  .back { color: #4f8ef7; font-size: 11px; cursor: pointer; }
+  .top-bar h2 { margin: 0; font-size: 13px; font-weight: 600; color: #e0e0e0; }
+  .badge { font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 700; }
+  .badge.action { background: rgba(247,79,79,0.15); color: #f74f4f; border: 1px solid rgba(247,79,79,0.3); }
+  .badge.reviewing { background: rgba(247,162,79,0.15); color: #f7a24f; border: 1px solid rgba(247,162,79,0.3); }
+  .top-actions { margin-left: auto; display: flex; gap: 8px; }
+  .btn { font-size: 11px; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-weight: 600; border: none; }
+  .btn.primary { background: #4f8ef7; color: #fff; }
+  .btn.ghost { background: transparent; color: #888; border: 1px solid #2a2a2a; }
+  .btn.danger-ghost { background: transparent; color: #f74f4f; border: 1px solid rgba(247,79,79,0.3); }
+
+  .body { display: flex; }
+  .left-pane { flex: 1; border-right: 1px solid #1e1e1e; }
+  .right-pane { width: 280px; flex-shrink: 0; }
+
+  /* Invoice header */
+  .inv-header { padding: 14px 16px; border-bottom: 1px solid #1e1e1e; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .inv-field .lbl { font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
+  .inv-field .val { font-size: 13px; color: #ddd; font-weight: 500; }
+  .inv-field .val.big { font-size: 18px; font-weight: 700; color: #fff; }
+  .inv-field .val.red { color: #f74f4f; }
+
+  /* PDF placeholder */
+  .pdf-area { margin: 12px 16px; background: #161616; border: 1px solid #2a2a2a; border-radius: 6px; height: 120px; display: flex; align-items: center; justify-content: center; color: #444; font-size: 11px; gap: 8px; }
+
+  /* Findings */
+  .section-title { padding: 10px 16px 6px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: #555; border-top: 1px solid #1a1a1a; }
+  .finding { margin: 0 12px 8px; border: 1px solid #2a2a2a; border-radius: 8px; overflow: hidden; }
+  .finding.selected { border-color: rgba(247,79,79,0.4); }
+  .finding-head { display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: #161616; }
+  .finding-check { width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid #333; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .finding-check.checked { background: #f74f4f; border-color: #f74f4f; color: #fff; font-size: 9px; }
+  .finding-type { font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 600; }
+  .finding-type.red { background: rgba(247,79,79,0.1); color: #f77; border: 1px solid rgba(247,79,79,0.2); }
+  .finding-type.warn { background: rgba(247,162,79,0.1); color: #f7a24f; border: 1px solid rgba(247,162,79,0.2); }
+  .finding-desc { font-size: 12px; color: #ccc; flex: 1; }
+  .finding-amount { font-size: 13px; font-weight: 700; color: #f74f4f; margin-left: auto; flex-shrink: 0; }
+  .finding-body { padding: 8px 12px 10px; background: #131313; border-top: 1px solid #1e1e1e; }
+  .evidence-row { display: flex; gap: 8px; margin-bottom: 4px; font-size: 11px; }
+  .evidence-label { color: #555; width: 100px; flex-shrink: 0; }
+  .evidence-val { color: #bbb; }
+  .evidence-val.wrong { color: #f74f4f; text-decoration: line-through; }
+  .evidence-val.right { color: #4fcf7a; }
+  .evidence-source { font-size: 10px; color: #555; margin-top: 4px; }
+
+  /* Right pane */
+  .right-section { padding: 12px 14px; border-bottom: 1px solid #1e1e1e; }
+  .right-section h4 { margin: 0 0 8px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: #555; }
+  .summary-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; }
+  .summary-row .label { color: #777; }
+  .summary-row .amount { color: #ddd; font-weight: 500; }
+  .summary-row .amount.red { color: #f74f4f; font-weight: 700; }
+  .summary-row .amount.green { color: #4fcf7a; }
+  .divider { border: none; border-top: 1px solid #1e1e1e; margin: 6px 0; }
+  .doc-item { display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: #888; padding: 4px 0; }
+  .doc-item .doc-name { color: #ccc; }
+  .doc-item .doc-link { color: #4f8ef7; font-size: 10px; }
+  .upload-link { font-size: 11px; color: #4f8ef7; margin-top: 4px; display: block; }
+  .dispute-summary { background: rgba(247,79,79,0.06); border: 1px solid rgba(247,79,79,0.2); border-radius: 6px; padding: 10px; margin: 10px 14px; }
+  .dispute-summary p { font-size: 11px; color: #aaa; margin: 0 0 8px; }
+  .dispute-summary .amount-big { font-size: 16px; font-weight: 700; color: #f74f4f; }
+  .dispute-summary .count { font-size: 11px; color: #888; }
+  .action-buttons { padding: 10px 14px 14px; display: flex; flex-direction: column; gap: 6px; }
+</style>
+
+<h2>Invoice Detail View</h2>
+<p class="subtitle">What the AP team member sees after clicking "Review →" on an invoice</p>
+
+<div class="shell">
+  <div class="top-bar">
+    <span class="back">← Back to Invoices</span>
+    <h2>Werner Enterprises — #INV-20240312</h2>
+    <span class="badge action">Action Needed</span>
+    <div class="top-actions">
+      <button class="btn ghost">Approve Invoice</button>
+      <button class="btn danger-ghost">Open Dispute (2)</button>
+    </div>
+  </div>
+
+  <div class="body">
+    <!-- Left: invoice data + findings -->
+    <div class="left-pane">
+      <div class="inv-header">
+        <div class="inv-field"><div class="lbl">Carrier</div><div class="val">Werner Enterprises</div></div>
+        <div class="inv-field"><div class="lbl">Invoice #</div><div class="val">INV-20240312</div></div>
+        <div class="inv-field"><div class="lbl">Invoice Date</div><div class="val">Mar 12, 2024</div></div>
+        <div class="inv-field"><div class="lbl">Invoice Total</div><div class="val big">$4,200.00</div></div>
+        <div class="inv-field"><div class="lbl">Potential Overcharge</div><div class="val big red">−$620.00</div></div>
+        <div class="inv-field"><div class="lbl">BOL / PRO #</div><div class="val">BOL-2024-0891</div></div>
+      </div>
+
+      <div class="pdf-area">
+        <span>📄</span> <span>invoice-werner-20240312.pdf &nbsp;·&nbsp; <span style="color:#4f8ef7;cursor:pointer">View original</span></span>
+      </div>
+
+      <div class="section-title">Audit Findings — 2 issues found &nbsp;·&nbsp; <span style="color:#888">Check findings to include in dispute</span></div>
+
+      <!-- Finding 1: selected -->
+      <div class="finding selected">
+        <div class="finding-head">
+          <div class="finding-check checked">✓</div>
+          <span class="finding-type red">Rate Mismatch</span>
+          <span class="finding-desc">Base line-haul rate exceeds contracted amount</span>
+          <span class="finding-amount">−$380.00</span>
+        </div>
+        <div class="finding-body">
+          <div class="evidence-row"><span class="evidence-label">Billed rate:</span><span class="evidence-val wrong">$2.18 / mile × 1,740 mi</span></div>
+          <div class="evidence-row"><span class="evidence-label">Contracted rate:</span><span class="evidence-val right">$1.96 / mile (Werner rate sheet, effective Jan 2024)</span></div>
+          <div class="evidence-row"><span class="evidence-label">Difference:</span><span class="evidence-val" style="color:#f74f4f">$0.22 / mile × 1,740 mi = $382.80 overcharge</span></div>
+          <div class="evidence-source">Source: werner-rates-jan2024.pdf · Page 3</div>
+        </div>
+      </div>
+
+      <!-- Finding 2: selected -->
+      <div class="finding selected">
+        <div class="finding-head">
+          <div class="finding-check checked">✓</div>
+          <span class="finding-type warn">Detention</span>
+          <span class="finding-desc">Detention hours billed with no BOL sign-off time</span>
+          <span class="finding-amount">−$240.00</span>
+        </div>
+        <div class="finding-body">
+          <div class="evidence-row"><span class="evidence-label">Billed:</span><span class="evidence-val wrong">3 hrs detention @ $80/hr = $240</span></div>
+          <div class="evidence-row"><span class="evidence-label">BOL shows:</span><span class="evidence-val" style="color:#f7a24f">Arrival and departure times not recorded on BOL-2024-0891</span></div>
+          <div class="evidence-row"><span class="evidence-label">Contract:</span><span class="evidence-val">2 free hours included; $80/hr after — but hours unverifiable</span></div>
+          <div class="evidence-source">Cannot verify without signed arrival/departure timestamps</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right: summary + docs + actions -->
+    <div class="right-pane">
+      <div class="right-section">
+        <h4>Invoice Summary</h4>
+        <div class="summary-row"><span class="label">Invoice total</span><span class="amount">$4,200.00</span></div>
+        <div class="summary-row"><span class="label">Findings selected</span><span class="amount red">−$620.00</span></div>
+        <div class="divider"></div>
+        <div class="summary-row"><span class="label">Expected total</span><span class="amount green">$3,580.00</span></div>
+      </div>
+
+      <div class="right-section">
+        <h4>Supporting Documents</h4>
+        <div class="doc-item"><span class="doc-name">BOL-2024-0891.pdf</span><span class="doc-link">View</span></div>
+        <div class="doc-item"><span class="doc-name">werner-rates-jan2024.pdf</span><span class="doc-link">View</span></div>
+        <a class="upload-link">+ Attach document</a>
+      </div>
+
+      <div class="dispute-summary">
+        <p>Ready to dispute:</p>
+        <div class="amount-big">$620.00</div>
+        <div class="count">2 findings selected</div>
+      </div>
+
+      <div class="action-buttons">
+        <button class="btn primary" style="text-align:center">Open Dispute →</button>
+        <button class="btn ghost" style="text-align:center">Approve Invoice</button>
+      </div>
+    </div>
+  </div>
+</div>

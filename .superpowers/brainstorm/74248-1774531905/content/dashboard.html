@@ -1,0 +1,142 @@
+<style>
+  .mockup-shell { background: #111; border: 1.5px solid #2a2a2a; border-radius: 10px; overflow: hidden; font-size: 12px; }
+  .top-bar { background: #161616; border-bottom: 1px solid #2a2a2a; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; }
+  .top-bar .logo { font-weight: 700; font-size: 14px; color: #fff; letter-spacing: -0.3px; }
+  .top-bar .logo span { color: #4f8ef7; }
+  .top-bar .nav { display: flex; gap: 20px; font-size: 12px; color: #888; }
+  .top-bar .nav .active { color: #fff; }
+  .top-bar .user { font-size: 11px; color: #666; }
+
+  .stats-row { display: flex; gap: 1px; background: #2a2a2a; border-bottom: 1px solid #2a2a2a; }
+  .stat { flex: 1; background: #161616; padding: 12px 16px; }
+  .stat .val { font-size: 20px; font-weight: 700; color: #fff; }
+  .stat .val.red { color: #f74f4f; }
+  .stat .val.yellow { color: #f7a24f; }
+  .stat .val.green { color: #4fcf7a; }
+  .stat .lbl { font-size: 11px; color: #666; margin-top: 2px; }
+
+  .toolbar { padding: 10px 16px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #1e1e1e; }
+  .filter-tab { font-size: 11px; padding: 4px 10px; border-radius: 5px; color: #888; cursor: pointer; border: 1px solid transparent; }
+  .filter-tab.active { background: #1e2a3a; color: #4f8ef7; border-color: #4f8ef7; }
+  .search { margin-left: auto; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 5px; padding: 4px 10px; color: #666; font-size: 11px; width: 160px; }
+
+  .invoice-list { padding: 0; }
+  .invoice-row { display: flex; align-items: center; gap: 12px; padding: 11px 16px; border-bottom: 1px solid #1a1a1a; cursor: pointer; }
+  .invoice-row:hover { background: #181818; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .status-dot.action { background: #f74f4f; box-shadow: 0 0 6px #f74f4f88; }
+  .status-dot.reviewing { background: #f7a24f; }
+  .status-dot.cleared { background: #4fcf7a; }
+  .inv-carrier { font-weight: 600; color: #e0e0e0; width: 120px; flex-shrink: 0; font-size: 12px; }
+  .inv-num { color: #666; width: 100px; flex-shrink: 0; font-size: 11px; }
+  .inv-date { color: #666; width: 80px; flex-shrink: 0; font-size: 11px; }
+  .inv-total { color: #bbb; width: 80px; flex-shrink: 0; font-size: 12px; text-align: right; }
+  .inv-overcharge { font-weight: 700; width: 90px; flex-shrink: 0; font-size: 12px; text-align: right; }
+  .inv-overcharge.red { color: #f74f4f; }
+  .inv-overcharge.none { color: #444; font-weight: 400; }
+  .inv-findings { margin-left: 4px; display: flex; gap: 4px; flex: 1; }
+  .finding-tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: rgba(247,79,79,0.12); color: #f77; border: 1px solid rgba(247,79,79,0.2); white-space: nowrap; }
+  .finding-tag.warn { background: rgba(247,162,79,0.12); color: #f7a24f; border-color: rgba(247,162,79,0.2); }
+  .finding-tag.info { background: rgba(100,100,100,0.12); color: #888; border-color: #2a2a2a; }
+  .inv-action { margin-left: auto; font-size: 11px; color: #4f8ef7; flex-shrink: 0; }
+
+  .empty-footer { padding: 10px 16px; text-align: center; font-size: 11px; color: #444; }
+</style>
+
+<h2>AP Review Dashboard</h2>
+<p class="subtitle">The main screen — an AP team member's daily view</p>
+
+<div class="mockup-shell">
+  <div class="top-bar">
+    <div class="logo"><span>Sifter</span></div>
+    <div class="nav">
+      <span class="active">Invoices</span>
+      <span>Disputes</span>
+      <span>Carriers</span>
+      <span>Settings</span>
+    </div>
+    <div class="user">Acme Logistics · Sarah K.</div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat"><div class="val red">12</div><div class="lbl">Action Needed</div></div>
+    <div class="stat"><div class="val yellow">5</div><div class="lbl">Reviewing</div></div>
+    <div class="stat"><div class="val green">84</div><div class="lbl">Cleared</div></div>
+    <div class="stat"><div class="val red">$14,280</div><div class="lbl">Overcharges Found (30d)</div></div>
+    <div class="stat"><div class="val green">$8,940</div><div class="lbl">Recovered (30d)</div></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="filter-tab active">Action Needed <span style="color:#f74f4f">12</span></div>
+    <div class="filter-tab">Reviewing <span style="color:#f7a24f">5</span></div>
+    <div class="filter-tab">Cleared</div>
+    <div class="filter-tab">All</div>
+    <div class="search">Search carrier, invoice #...</div>
+  </div>
+
+  <div class="invoice-list">
+    <div class="invoice-row">
+      <div class="status-dot action"></div>
+      <div class="inv-carrier">Werner Ent.</div>
+      <div class="inv-num">#INV-20240312</div>
+      <div class="inv-date">Mar 12</div>
+      <div class="inv-total">$4,200.00</div>
+      <div class="inv-findings">
+        <span class="finding-tag">Rate mismatch +$380</span>
+        <span class="finding-tag warn">Detention unverified</span>
+      </div>
+      <div class="inv-overcharge red">−$620</div>
+      <div class="inv-action">Review →</div>
+    </div>
+    <div class="invoice-row">
+      <div class="status-dot action"></div>
+      <div class="inv-carrier">J.B. Hunt</div>
+      <div class="inv-num">#INV-20240309</div>
+      <div class="inv-date">Mar 9</div>
+      <div class="inv-total">$7,850.00</div>
+      <div class="inv-findings">
+        <span class="finding-tag">Duplicate invoice</span>
+      </div>
+      <div class="inv-overcharge red">−$7,850</div>
+      <div class="inv-action">Review →</div>
+    </div>
+    <div class="invoice-row">
+      <div class="status-dot action"></div>
+      <div class="inv-carrier">Schneider</div>
+      <div class="inv-num">#INV-20240308</div>
+      <div class="inv-date">Mar 8</div>
+      <div class="inv-total">$3,100.00</div>
+      <div class="inv-findings">
+        <span class="finding-tag warn">Fuel surcharge mismatch</span>
+        <span class="finding-tag warn">Math error</span>
+      </div>
+      <div class="inv-overcharge red">−$215</div>
+      <div class="inv-action">Review →</div>
+    </div>
+    <div class="invoice-row">
+      <div class="status-dot reviewing"></div>
+      <div class="inv-carrier">KLLM Trans.</div>
+      <div class="inv-num">#INV-20240305</div>
+      <div class="inv-date">Mar 5</div>
+      <div class="inv-total">$5,500.00</div>
+      <div class="inv-findings">
+        <span class="finding-tag">Accessorial no proof</span>
+      </div>
+      <div class="inv-overcharge red">−$450</div>
+      <div class="inv-action">View →</div>
+    </div>
+    <div class="invoice-row">
+      <div class="status-dot cleared"></div>
+      <div class="inv-carrier">Swift Trans.</div>
+      <div class="inv-num">#INV-20240301</div>
+      <div class="inv-date">Mar 1</div>
+      <div class="inv-total">$3,800.00</div>
+      <div class="inv-findings">
+        <span class="finding-tag info">No issues found</span>
+      </div>
+      <div class="inv-overcharge none">—</div>
+      <div class="inv-action">View →</div>
+    </div>
+  </div>
+  <div class="empty-footer">Showing 5 of 101 invoices · Sorted by: overcharge amount ↓</div>
+</div>
