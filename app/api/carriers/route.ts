@@ -43,10 +43,12 @@ export async function GET(request: NextRequest) {
   }
 
   const formatted = (carriers ?? []).map((c) => {
-    const sheets = (c.rate_sheets as Array<{
+    type RateSheetRow = {
       id: string; document_id: string; effective_date: string | null;
-      uploaded_at: string; status: string; documents: { filename: string } | null;
-    }> ?? []).sort(
+      uploaded_at: string; status: string;
+      documents: { filename: string } | { filename: string }[] | null;
+    };
+    const sheets = ((c.rate_sheets as unknown) as RateSheetRow[] ?? []).sort(
       (a, b) => new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime()
     );
     return {
@@ -56,12 +58,15 @@ export async function GET(request: NextRequest) {
       billing_email: c.billing_email ?? null,
       billing_email_confirmed: c.billing_email_confirmed,
       invoice_count: invoiceCounts[c.id] ?? 0,
-      rate_sheets: sheets.map((s) => ({
-        id: s.id,
-        filename: (s.documents as { filename: string } | null)?.filename ?? 'rate-sheet.pdf',
-        effective_date: s.effective_date,
-        status: s.status === 'current' ? 'current' : 'superseded',
-      })),
+      rate_sheets: sheets.map((s) => {
+        const doc = Array.isArray(s.documents) ? s.documents[0] : s.documents;
+        return {
+          id: s.id,
+          filename: doc?.filename ?? 'rate-sheet.pdf',
+          effective_date: s.effective_date,
+          status: s.status === 'current' ? 'current' : 'superseded',
+        };
+      }),
     };
   });
 
