@@ -49,4 +49,41 @@ export type SifterEvents = {
   };
 
   'sifter/pipeline.health': { data: Record<string, never> };
+
+  'email.received': {
+    data: {
+      org_id: string;
+      thread_id: string;
+      message_id: string;
+      from_email: string;
+      to_emails: string[];
+      cc_emails?: string[];
+      subject: string;
+      body: string;
+      received_at: string;
+    };
+  };
+
+  'email.unmatched': {
+    data: {
+      org_id: string;
+      thread_id: string;
+      message_id: string;
+      from_email: string;
+      to_emails: string[];
+      cc_emails?: string[];
+      subject: string;
+      body: string;
+      received_at: string;
+    };
+  };
+
+  'notification.created': {
+    data: {
+      org_id: string;
+      type: string;
+      dispute_id: string;
+      message: string;
+    };
+  };
 };
