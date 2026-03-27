@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { OrgProvider } from '@/app/components/OrgProvider';
 import Navbar from '@/app/components/Navbar';
@@ -50,6 +51,21 @@ export default async function ProtectedLayout({
     );
 
     orgId = newOrgId ?? null;
+  }
+
+  if (orgId) {
+    const pathname = (await headers()).get('x-pathname') ?? '';
+    if (!pathname.startsWith('/onboarding')) {
+      const { data: org } = await supabase
+        .from('organizations')
+        .select('onboarding_completed')
+        .eq('id', orgId)
+        .maybeSingle();
+
+      if (org && !org.onboarding_completed) {
+        redirect('/onboarding');
+      }
+    }
   }
 
   return (
