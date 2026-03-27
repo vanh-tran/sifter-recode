@@ -14,6 +14,7 @@ import {
 } from './ui/navigation-menu';
 import { cn } from '@/lib/utils';
 import ThemeToggle from '@/app/components/ThemeToggle';
+import { NotificationBell } from '@/app/components/Notifications/NotificationBell';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard' },
@@ -83,6 +84,7 @@ export default function Navbar() {
             <ThemeToggle />
             {user && (
               <>
+                <NotificationBell />
                 <div className="relative">
                   <button
                     onClick={() => setShowLogout(!showLogout)}
