@@ -3,6 +3,50 @@ import { getAuthOrgContext } from '@/lib/server/auth-context';
 import { requirePermission } from '@/lib/server/rbac';
 import { NextRequest, NextResponse } from 'next/server';
 
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> | { id: string } }
+) {
+  try {
+    const supabase = await createClient();
+    const authContext = await getAuthOrgContext(supabase);
+    if (!authContext) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { orgId, role } = authContext;
+    const denied = requirePermission(role, 'disputes:create');
+    if (denied) return denied;
+
+    const resolvedParams = 'then' in params ? await params : params;
+    const disputeId = resolvedParams.id;
+
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(disputeId)) {
+      return NextResponse.json({ error: 'Invalid dispute ID' }, { status: 400 });
+    }
+
+    const { data: dispute, error } = await supabase
+      .from('disputes')
+      .select('*')
+      .eq('id', disputeId)
+      .eq('org_id', orgId)
+      .single();
+
+    if (error || !dispute) {
+      return NextResponse.json({ error: 'Dispute not found' }, { status: 404 });
+    }
+
+    const { data: messages } = await supabase
+      .from('dispute_messages')
+      .select('*')
+      .eq('dispute_id', disputeId)
+      .eq('org_id', orgId)
+      .order('sent_at', { ascending: true });
+
+    return NextResponse.json({ dispute, messages: messages ?? [] });
+  } catch (error) {
+    console.error('Error in GET /api/disputes/:id:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
 async function sumFindingAmounts(
   supabase: Awaited<ReturnType<typeof createClient>>,
   orgId: string,
