@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { getAuthOrgContext } from '@/lib/server/auth-context';
+import { requirePermission } from '@/lib/server/rbac';
 import { isValidUuid } from '@/lib/utils';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -13,7 +14,9 @@ export async function POST(
     if (!authContext) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const { orgId } = authContext;
+    const { orgId, role } = authContext;
+    const denied = requirePermission(role, 'disputes:create');
+    if (denied) return denied;
 
     const resolvedParams = 'then' in params ? await params : params;
     const invoiceId = resolvedParams.id;
@@ -24,6 +27,10 @@ export async function POST(
 
     const body = await request.json();
     const { disputed_finding_ids = [] } = body;
+
+    if (!Array.isArray(disputed_finding_ids)) {
+      return NextResponse.json({ error: 'disputed_finding_ids must be an array' }, { status: 400 });
+    }
 
     const { data: invoice, error: invoiceError } = await supabase
       .from('invoices')

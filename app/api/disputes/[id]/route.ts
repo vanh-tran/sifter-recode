@@ -12,7 +12,7 @@ export async function GET(
     const authContext = await getAuthOrgContext(supabase);
     if (!authContext) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const { orgId, role } = authContext;
-    const denied = requirePermission(role, 'disputes:create');
+    const denied = requirePermission(role, 'invoices:read');
     if (denied) return denied;
 
     const resolvedParams = 'then' in params ? await params : params;
