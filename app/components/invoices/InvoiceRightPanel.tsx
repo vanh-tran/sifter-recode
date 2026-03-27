@@ -1,9 +1,29 @@
 'use client';
 
+import DisputePanel from '@/app/components/disputes/DisputePanel';
+
 interface Dispute {
   id: string;
   disputed_finding_ids: string[];
   status: string;
+}
+
+interface InvoiceForDisputePanel {
+  id: string;
+  invoice_number: string;
+  carrier: {
+    id: string;
+    name_normalized: string;
+    billing_email: string | null;
+    billing_email_confirmed: boolean;
+  };
+  findings: Array<{
+    id: string;
+    summary: string;
+    delta_amount: number;
+    amount_edited: number | null;
+    is_approved: boolean;
+  }>;
 }
 
 interface Props {
@@ -13,6 +33,8 @@ interface Props {
   disputeTotal: number;
   onOpenDispute: () => void;
   onApprove: () => void;
+  /** Full invoice data needed to render the DisputePanel section. Optional for backward compat. */
+  invoiceForDispute?: InvoiceForDisputePanel;
 }
 
 export default function InvoiceRightPanel({
@@ -21,6 +43,7 @@ export default function InvoiceRightPanel({
   disputeTotal,
   onOpenDispute,
   onApprove,
+  invoiceForDispute,
 }: Props) {
   const formatAmount = (n: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
@@ -69,6 +92,13 @@ export default function InvoiceRightPanel({
           </button>
         )}
       </div>
+
+      {invoiceForDispute && (
+        <section className="border-t border-brand-border pt-4 mt-2">
+          <h2 className="text-sm font-semibold text-brand-primary mb-3">Dispute</h2>
+          <DisputePanel invoice={invoiceForDispute} />
+        </section>
+      )}
     </div>
   );
 }
