@@ -1,4 +1,15 @@
-// tests/migrations/notifications-schema.test.ts
+import { describe, it, expect, vi } from 'vitest';
+
+vi.mock('@/lib/supabase/server', () => ({
+  createClient: vi.fn().mockResolvedValue({
+    from: vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        limit: vi.fn().mockResolvedValue({ data: [], error: null }),
+      }),
+    }),
+  }),
+}));
+
 import { createClient } from '@/lib/supabase/server';
 
 describe('notifications table', () => {
