@@ -12,7 +12,7 @@ import { isValidUuid } from '@/lib/utils';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
@@ -23,7 +23,7 @@ export async function GET(
     const { orgId } = authContext;
 
     // Handle both sync and async params (Next.js 15+ compatibility)
-    const resolvedParams = 'then' in params ? await params : params;
+    const resolvedParams = await params;
     const invoiceId = resolvedParams.id;
 
     if (!isValidUuid(invoiceId)) {

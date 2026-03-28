@@ -13,7 +13,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
@@ -26,7 +26,7 @@ export async function GET(
     const readDenied = requirePermission(role, 'findings:read');
     if (readDenied) return readDenied;
 
-    const resolvedParams = 'then' in params ? await params : params;
+    const resolvedParams = await params;
     const findingId = resolvedParams.id;
 
     if (!isValidUuid(findingId)) {
@@ -122,7 +122,7 @@ const MAX_STRING_LEN = 10000;
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
@@ -135,7 +135,7 @@ export async function PATCH(
     const manageDenied = requirePermission(role, 'invoices:manage');
     if (manageDenied) return manageDenied;
 
-    const resolvedParams = 'then' in params ? await params : params;
+    const resolvedParams = await params;
     const findingId = resolvedParams.id;
 
     if (!isValidUuid(findingId)) {

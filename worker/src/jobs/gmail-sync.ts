@@ -156,56 +156,72 @@ export async function handleGmailSync(): Promise<{ processed: number }> {
 
   for (const connection of connections ?? []) {
     const { id: connectionId, org_id: orgId, last_history_id: lastHistoryId } = connection;
-    const tokenRows = connection.oauth_tokens as unknown as { refresh_token_encrypted: string }[] | null;
-    const encryptedToken = Array.isArray(tokenRows) ? tokenRows[0]?.refresh_token_encrypted : null;
+    const tokenRows = connection.oauth_tokens as unknown as { refresh_token_encrypted: string }[] | { refresh_token_encrypted: string } | null;
+    const encryptedToken = Array.isArray(tokenRows)
+      ? tokenRows[0]?.refresh_token_encrypted
+      : (tokenRows as { refresh_token_encrypted: string } | null)?.refresh_token_encrypted ?? null;
     if (!encryptedToken) continue;
 
-    const refreshToken = await decryptOAuthSecret(encryptedToken);
-    const gmail = await buildGmailClient(refreshToken);
-    let newHistoryId: string | null = null;
+    try {
+      const refreshToken = await decryptOAuthSecret(encryptedToken);
+      const gmail = await buildGmailClient(refreshToken);
+      let newHistoryId: string | null = null;
 
-    if (!lastHistoryId) {
-      const afterDate = new Date();
-      afterDate.setDate(afterDate.getDate() - EMAIL_BACKLOG_DAYS);
-      const afterTimestamp = Math.floor(afterDate.getTime() / 1000);
+      if (!lastHistoryId) {
+        const afterDate = new Date();
+        afterDate.setDate(afterDate.getDate() - EMAIL_BACKLOG_DAYS);
+        const afterTimestamp = Math.floor(afterDate.getTime() / 1000);
 
-      const listResp = await gmail.users.messages.list({
-        userId: 'me',
-        q: `after:${afterTimestamp} has:attachment filename:pdf`,
-        maxResults: 500,
-      });
+        const listResp = await gmail.users.messages.list({
+          userId: 'me',
+          q: `after:${afterTimestamp} has:attachment filename:pdf`,
+          maxResults: 500,
+        });
 
-      for (const msg of listResp.data.messages ?? []) {
-        if (msg.id) await processMessage(gmail, orgId as string, msg.id, supabase);
-      }
+        for (const msg of listResp.data.messages ?? []) {
+          if (msg.id) await processMessage(gmail, orgId as string, msg.id, supabase);
+        }
 
-      const profile = await gmail.users.getProfile({ userId: 'me' });
-      newHistoryId = profile.data.historyId ?? null;
-    } else {
-      const histResp = await gmail.users.history.list({
-        userId: 'me',
-        startHistoryId: lastHistoryId as string,
-        historyTypes: ['messageAdded'],
-        labelId: 'INBOX',
-      });
+        const profile = await gmail.users.getProfile({ userId: 'me' });
+        newHistoryId = profile.data.historyId ?? null;
+      } else {
+        const histResp = await gmail.users.history.list({
+          userId: 'me',
+          startHistoryId: lastHistoryId as string,
+          historyTypes: ['messageAdded'],
+          labelId: 'INBOX',
+        });
 
-      newHistoryId = nextHistoryId({
-        history: (histResp.data.history ?? []) as { id?: string }[],
-      });
+        newHistoryId = nextHistoryId({
+          history: (histResp.data.history ?? []) as { id?: string }[],
+        });
 
-      for (const record of histResp.data.history ?? []) {
-        for (const added of record.messagesAdded ?? []) {
-          if (added.message?.id) {
-            await processMessage(gmail, orgId as string, added.message.id, supabase);
+        for (const record of histResp.data.history ?? []) {
+          for (const added of record.messagesAdded ?? []) {
+            if (added.message?.id) {
+              await processMessage(gmail, orgId as string, added.message.id, supabase);
+            }
           }
         }
       }
-    }
 
-    if (newHistoryId) {
       await supabase
         .from('email_connections')
-        .update({ last_history_id: newHistoryId, updated_at: new Date().toISOString() })
+        .update({
+          ...(newHistoryId ? { last_history_id: newHistoryId } : {}),
+          last_error: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', connectionId);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error('[gmail-sync] connection failed', connectionId, message);
+      await supabase
+        .from('email_connections')
+        .update({
+          last_error: message.slice(0, 2000),
+          updated_at: new Date().toISOString(),
+        })
         .eq('id', connectionId);
     }
   }

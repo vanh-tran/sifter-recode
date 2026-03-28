@@ -52,6 +52,7 @@ export default function Navbar() {
                 width={80}
                 height={16}
                 className="h-8 w-auto dark:hidden"
+                style={{ width: 'auto' }}
                 priority
               />
               <Image
@@ -60,6 +61,7 @@ export default function Navbar() {
                 width={80}
                 height={16}
                 className="hidden h-8 w-auto dark:block"
+                style={{ width: 'auto' }}
                 priority
               />
             </Link>

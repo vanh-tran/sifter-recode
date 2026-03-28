@@ -14,7 +14,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
@@ -28,7 +28,7 @@ export async function GET(
     if (denied) return denied;
 
     // Handle both sync and async params (Next.js 15+ compatibility)
-    const resolvedParams = 'then' in params ? await params : params;
+    const resolvedParams = await params;
     const invoiceId = resolvedParams.id;
 
     if (!isValidUuid(invoiceId)) {
@@ -214,7 +214,7 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
@@ -223,7 +223,7 @@ export async function PATCH(
     const { orgId, role } = authContext;
     const denied = requirePermission(role, 'invoices:manage');
     if (denied) return denied;
-    const resolvedParams = 'then' in params ? await params : params;
+    const resolvedParams = await params;
     const id = resolvedParams.id;
     let body: { ui_status?: string };
     try { body = (await request.json()) as { ui_status?: string }; }

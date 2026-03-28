@@ -15,6 +15,7 @@ export default function LandingHeader() {
           width={120}
           height={32}
           className="h-6 w-auto sm:h-8"
+          style={{ width: 'auto' }}
           priority
         />
       </Link>

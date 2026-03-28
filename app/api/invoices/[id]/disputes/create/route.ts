@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
@@ -18,7 +18,7 @@ export async function POST(
     const denied = requirePermission(role, 'disputes:create');
     if (denied) return denied;
 
-    const resolvedParams = 'then' in params ? await params : params;
+    const resolvedParams = await params;
     const invoiceId = resolvedParams.id;
 
     if (!isValidUuid(invoiceId)) {

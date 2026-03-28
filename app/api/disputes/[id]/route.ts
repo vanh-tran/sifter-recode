@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
@@ -15,7 +15,7 @@ export async function GET(
     const denied = requirePermission(role, 'invoices:read');
     if (denied) return denied;
 
-    const resolvedParams = 'then' in params ? await params : params;
+    const resolvedParams = await params;
     const disputeId = resolvedParams.id;
 
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(disputeId)) {
@@ -60,7 +60,7 @@ async function sumFindingAmounts(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
@@ -69,7 +69,7 @@ export async function PATCH(
     const { orgId, role } = authContext;
     const denied = requirePermission(role, 'disputes:create');
     if (denied) return denied;
-    const resolvedParams = 'then' in params ? await params : params;
+    const resolvedParams = await params;
     const disputeId = resolvedParams.id;
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(disputeId))
       return NextResponse.json({ error: 'Invalid dispute ID' }, { status: 400 });

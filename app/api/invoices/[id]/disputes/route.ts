@@ -13,7 +13,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
@@ -22,7 +22,7 @@ export async function POST(
     const { orgId, role } = authContext;
     const denied = requirePermission(role, 'disputes:create');
     if (denied) return denied;
-    const resolvedParams = 'then' in params ? await params : params;
+    const resolvedParams = await params;
     const invoiceId = resolvedParams.id;
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(invoiceId))
       return NextResponse.json({ error: 'Invalid invoice ID' }, { status: 400 });
@@ -43,7 +43,7 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
@@ -54,7 +54,7 @@ export async function GET(
     const { orgId } = authContext;
 
     // Handle both sync and async params (Next.js 15+ compatibility)
-    const resolvedParams = 'then' in params ? await params : params;
+    const resolvedParams = await params;
     const invoiceId = resolvedParams.id;
 
     if (!isValidUuid(invoiceId)) {
