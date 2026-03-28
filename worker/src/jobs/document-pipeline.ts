@@ -1,7 +1,7 @@
 import type { Job } from 'bullmq';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Db } from 'mongodb';
-import type { DocumentPipelinePayload } from '@sifter/core/queue/types.js';
+import type { DocumentPipelinePayload } from '@sifter/core/queue/types';
 import { runOcrStage } from '../stages/ocr.js';
 import { runClassifyStage } from '../stages/classify.js';
 import { runNormalizeStage } from '../stages/normalize.js';

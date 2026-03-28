@@ -5,17 +5,17 @@ export interface DocumentPipelinePayload {
   sourceType: 'upload' | 'email';
 }
 
-export interface GmailSyncPayload {
-  orgId: string;
-  mailboxId: string;
-}
+/** No fields — worker syncs all active Gmail connections. */
+export type GmailSyncPayload = Record<string, never>;
 
 export interface EmailEventsPayload {
   orgId: string;
-  mailboxId: string;
-  messageId: string;
   threadId: string;
-  from: string;
+  messageId: string;
+  fromEmail: string;
+  toEmails: string[];
+  ccEmails: string[];
   subject: string;
+  body: string;
   receivedAt: string;
 }

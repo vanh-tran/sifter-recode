@@ -1,9 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { runDeterministicChecks } from '@sifter/core/audit/deterministic-checks.js';
-import { runAiAuditAgent } from '@sifter/core/audit/ai-audit-agent.js';
-import { insertFindingsAndUpdateInvoice } from '@sifter/core/audit/post-audit-db.js';
-import type { FindingDraft } from '@sifter/core/audit/types.js';
-import type { CheckResult } from '@sifter/core/audit/deterministic-checks.js';
+import { runDeterministicChecks } from '@sifter/core/audit/deterministic-checks';
+import { runAiAuditAgent } from '@sifter/core/audit/ai-audit-agent';
+import { insertFindingsAndUpdateInvoice } from '@sifter/core/audit/post-audit-db';
+import type { FindingDraft } from '@sifter/core/audit/types';
+import type { CheckResult } from '@sifter/core/audit/deterministic-checks';
 
 interface PostAuditInput {
   orgId: string;

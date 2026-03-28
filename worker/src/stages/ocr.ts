@@ -2,7 +2,7 @@ import { Storage } from '@google-cloud/storage';
 import { randomUUID } from 'crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Db } from 'mongodb';
-import { extractTextFromPdfBuffer } from '@sifter/core/ocr/extract-text.js';
+import { extractTextFromPdfBuffer } from '@sifter/core/ocr/extract-text';
 
 interface OcrStageInput {
   orgId: string;

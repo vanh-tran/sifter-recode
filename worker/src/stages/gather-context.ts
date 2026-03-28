@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { pickLatestRateSheet } from '@sifter/core/audit/gather-context.js';
+import { pickLatestRateSheet } from '@sifter/core/audit/gather-context';
 
 interface GatherContextInput {
   orgId: string;

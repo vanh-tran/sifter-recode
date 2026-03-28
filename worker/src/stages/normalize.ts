@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Db } from 'mongodb';
-import { normalizeInvoiceFromOcr } from '@sifter/core/llm/normalize-invoice.js';
+import { normalizeInvoiceFromOcr } from '@sifter/core/llm/normalize-invoice';
 
 interface NormalizeStageInput {
   orgId: string;
@@ -95,7 +95,7 @@ export async function runNormalizeStage(
 
   if (normalized.lineItems.length > 0) {
     const { error: liErr } = await supabase.from('invoice_line_items').insert(
-      normalized.lineItems.map((item) => ({
+      normalized.lineItems.map((item: (typeof normalized.lineItems)[number]) => ({
         org_id: orgId,
         invoice_id: invoiceId,
         line_number: item.lineNumber ?? null,
@@ -113,7 +113,7 @@ export async function runNormalizeStage(
 
   if (normalized.references.length > 0) {
     const { error: refErr } = await supabase.from('invoice_references').insert(
-      normalized.references.map((ref) => ({
+      normalized.references.map((ref: (typeof normalized.references)[number]) => ({
         org_id: orgId,
         invoice_id: invoiceId,
         ref_type: ref.refType,

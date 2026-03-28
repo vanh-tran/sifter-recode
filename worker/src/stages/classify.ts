@@ -4,7 +4,7 @@ import type { Db } from 'mongodb';
 import {
   classifyFreightInvoiceFromText,
   evaluateClassificationGate,
-} from '@sifter/core/llm/classify-invoice.js';
+} from '@sifter/core/llm/classify-invoice';
 
 interface ClassifyStageInput {
   orgId: string;
@@ -41,7 +41,7 @@ export async function runClassifyStage(
   const ocrText = (doc?.rawText as string) ?? '';
 
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  const classification = await classifyFreightInvoiceFromText(ocrText, async (p) => {
+  const classification = await classifyFreightInvoiceFromText(ocrText, async (p: string) => {
     const res = await openai.chat.completions.create({
       model: 'gpt-4o',
       response_format: { type: 'json_object' },
