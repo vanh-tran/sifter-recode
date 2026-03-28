@@ -69,5 +69,16 @@ export async function classifyDocument(
   const raw = await callOpenAI(
     `${CLASSIFY_DOCUMENT_PROMPT}\n\n--- OCR TEXT ---\n${rawText.slice(0, 120_000)}`
   );
-  return JSON.parse(raw) as ClassificationResult;
+  let parsed: ClassificationResult;
+  try {
+    parsed = JSON.parse(raw) as ClassificationResult;
+  } catch {
+    throw new Error(`classifyDocument: failed to parse LLM response as JSON. Raw: ${raw.slice(0, 500)}`);
+  }
+  // Defensive default for extractedRefs in case LLM omits it
+  parsed.extractedRefs ??= {
+    invoiceNumbers: [], bolNumbers: [], proNumbers: [],
+    poNumbers: [], trackingNumbers: [], carrierName: null, shipmentDate: null,
+  };
+  return parsed;
 }
