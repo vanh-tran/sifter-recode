@@ -32,21 +32,29 @@ export async function runFanInBarrier(
     documentId: string;
   }
 ): Promise<void> {
-  const { data: batch } = await supabase.rpc('increment_batch_phase1', {
+  const { data: batch, error: batchError } = await supabase.rpc('increment_batch_phase1', {
     p_org_id: orgId,
     p_source_message_id: sourceMessageId,
     p_freight_invoice_doc_id: isFreightInvoice ? documentId : null,
   });
 
+  if (batchError) {
+    throw new Error(`fan-in: increment_batch_phase1 failed for message ${sourceMessageId}: ${batchError.message}`);
+  }
+
   const row: BatchRow | null = Array.isArray(batch) ? batch[0] ?? null : (batch as BatchRow | null);
   if (!row || !shouldEnqueuePhase2(row)) return;
 
-  const { data: claimed } = await supabase.rpc('claim_phase2_enqueue', {
+  const { data: claimed, error: claimError } = await supabase.rpc('claim_phase2_enqueue', {
     p_org_id: orgId,
     p_source_message_id: sourceMessageId,
   });
 
-  if (!claimed) return;
+  if (claimError) {
+    throw new Error(`fan-in: claim_phase2_enqueue failed for message ${sourceMessageId}: ${claimError.message}`);
+  }
+
+  if (!claimed) return; // Another worker won the race — idempotent, silent
 
   await phase2Queue.add(
     `phase2-${row.freight_invoice_document_id}`,
