@@ -1,4 +1,4 @@
-import { Storage } from '@google-cloud/storage';
+import { getStorage } from '../gcs.js';
 import { randomUUID } from 'crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Db } from 'mongodb';
@@ -30,7 +30,7 @@ export async function runOcrStage(
     return existing.mongodb_document_id as string;
   }
 
-  const storage = new Storage();
+  const storage = getStorage();
   const [buf] = await storage.bucket(process.env.GCS_BUCKET!).file(gcsKey).download();
   const rawText = await extractTextFromPdfBuffer(buf as Buffer);
 

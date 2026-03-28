@@ -33,6 +33,11 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+!worker/.env.example
+
+# Decoded GCP service account (from GCP_CREDENTIALS_JSON); set GOOGLE_APPLICATION_CREDENTIALS to this path locally
+gcp-sa-key.json
 
 # vercel
 .vercel

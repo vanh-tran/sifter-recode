@@ -27,22 +27,15 @@ export async function runGatherContextStage(
 
   const { data: refs } = await supabase
     .from('invoice_references')
-    .select('ref_value')
+    .select('related_document_id')
     .eq('invoice_id', invoiceId)
-    .eq('org_id', orgId);
+    .eq('org_id', orgId)
+    .eq('ref_type', 'BOL')
+    .not('related_document_id', 'is', null);
 
-  const refValues = (refs ?? []).map((r: { ref_value: string }) => r.ref_value).filter(Boolean);
-  let bolDocumentIds: string[] = [];
-
-  if (refValues.length > 0) {
-    const { data: docs } = await supabase
-      .from('documents')
-      .select('id')
-      .eq('org_id', orgId)
-      .eq('doc_type', 'bol')
-      .in('ref_value', refValues);
-    bolDocumentIds = (docs ?? []).map((d: { id: string }) => d.id);
-  }
+  const bolDocumentIds = (refs ?? [])
+    .map((r: { related_document_id: string }) => r.related_document_id)
+    .filter(Boolean);
 
   let rateSheetId: string | null = null;
   if (inv?.carrier_id) {
