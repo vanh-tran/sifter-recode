@@ -32,6 +32,8 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+!worker/.env.example
 
 # vercel
 .vercel
@@ -40,11 +42,13 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# documentation (ignore /docs except tracked superpowers specs — parent /docs cannot be negated)
+# documentation (ignore /docs except tracked superpowers specs and connection docs)
 /docs/*
 !/docs/superpowers/
 !/docs/superpowers/specs/
 !/docs/superpowers/specs/**
+!/docs/connection/
+!/docs/connection/**
 /AI_AGENT_START_HERE
 
 # cursor

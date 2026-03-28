@@ -1,0 +1,35 @@
+{
+  "name": "@sifter/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./*": {
+      "import": "./dist/*.js",
+      "types": "./dist/*.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch"
+  },
+  "dependencies": {
+    "@google-cloud/kms": "^4.2.0",
+    "@google-cloud/storage": "^7.18.0",
+    "@supabase/supabase-js": "^2.89.0",
+    "bullmq": "^5.0.0",
+    "ioredis": "^5.3.0",
+    "mongodb": "^7.1.1",
+    "openai": "^6.16.0",
+    "googleapis": "^169.0.0",
+    "pdf-parse": "^2.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/pdf-parse": "^1.1.5",
+    "typescript": "^5"
+  }
+}
