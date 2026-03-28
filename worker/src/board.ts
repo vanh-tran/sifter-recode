@@ -2,7 +2,7 @@ import express from 'express';
 import { createBullBoard } from '@bull-board/api';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import { ExpressAdapter } from '@bull-board/express';
-import { documentPipelineQueue, gmailSyncQueue, emailEventsQueue } from '@sifter/core/queue/index';
+import { phase1Queue, phase2Queue, gmailSyncQueue, emailEventsQueue } from '@sifter/core/queue/index';
 
 export function startBullBoard(): void {
   const serverAdapter = new ExpressAdapter();
@@ -10,7 +10,8 @@ export function startBullBoard(): void {
 
   createBullBoard({
     queues: [
-      new BullMQAdapter(documentPipelineQueue),
+      new BullMQAdapter(phase1Queue),
+      new BullMQAdapter(phase2Queue),
       new BullMQAdapter(gmailSyncQueue),
       new BullMQAdapter(emailEventsQueue),
     ],
