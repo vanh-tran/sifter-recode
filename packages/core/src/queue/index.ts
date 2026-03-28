@@ -1,6 +1,6 @@
 import { Queue } from 'bullmq';
 import { Redis } from 'ioredis';
-import type { DocumentPipelinePayload, Phase1Payload, Phase2Payload, GmailSyncPayload, EmailEventsPayload } from './types.js';
+import type { Phase1Payload, Phase2Payload, GmailSyncPayload, EmailEventsPayload } from './types.js';
 
 let _redis: Redis | null = null;
 
@@ -24,10 +24,6 @@ function lazyQueue<T>(create: () => Queue<T>): Queue<T> {
     },
   });
 }
-
-export const documentPipelineQueue = lazyQueue<DocumentPipelinePayload>(() =>
-  new Queue<DocumentPipelinePayload>('document-pipeline', { connection: getRedisConnection() })
-);
 
 export const phase1Queue = lazyQueue<Phase1Payload>(() =>
   new Queue<Phase1Payload>('phase1', { connection: getRedisConnection() })

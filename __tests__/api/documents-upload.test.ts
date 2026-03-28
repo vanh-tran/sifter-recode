@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 
 vi.mock('@sifter/core/queue/index', () => ({
-  documentPipelineQueue: {
+  phase1Queue: {
     add: vi.fn().mockResolvedValue(undefined),
   },
 }));

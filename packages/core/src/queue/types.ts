@@ -1,10 +1,3 @@
-export interface DocumentPipelinePayload {
-  orgId: string;
-  documentId: string;
-  gcsKey: string;
-  sourceType: 'upload' | 'email';
-}
-
 export interface Phase1Payload {
   orgId: string;
   documentId: string;

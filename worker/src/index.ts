@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { gmailSyncQueue, documentPipelineQueue, emailEventsQueue } from '@sifter/core/queue/index';
+import { gmailSyncQueue, emailEventsQueue, phase1Queue, phase2Queue } from '@sifter/core/queue/index';
 import { createWorkers } from './workers.js';
 import { startAutoscaler } from './scaler.js';
 import { startBullBoard } from './board.js';
@@ -21,7 +21,8 @@ async function main() {
 
   const getQueueDepth = async () => {
     const counts = await Promise.all([
-      documentPipelineQueue.getJobCounts('waiting', 'active'),
+      phase1Queue.getJobCounts('waiting', 'active'),
+      phase2Queue.getJobCounts('waiting', 'active'),
       gmailSyncQueue.getJobCounts('waiting', 'active'),
       emailEventsQueue.getJobCounts('waiting', 'active'),
     ]);
