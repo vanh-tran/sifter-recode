@@ -15,11 +15,14 @@ export async function handlePhase1(
 ): Promise<void> {
   const { orgId, documentId, gcsKey, sourceType, sourceMessageId, sourceThreadId } = job.data;
 
-  await supabase
+  const { error: statusError } = await supabase
     .from('documents')
     .update({ processing_status: 'processing', updated_at: new Date().toISOString() })
     .eq('id', documentId)
     .eq('org_id', orgId);
+  if (statusError) {
+    throw new Error(`phase1: failed to set processing status for document ${documentId}: ${statusError.message}`);
+  }
 
   const mongoDocId = await runOcrStage(supabase, db, { orgId, documentId, gcsKey });
   const classifyResult = await runClassifyStage(supabase, db, { orgId, documentId, mongoDocId });
@@ -58,32 +61,41 @@ async function triggerReauditForThread(
   { orgId, sourceMessageId, sourceThreadId }: { orgId: string; sourceMessageId: string; sourceThreadId: string }
 ): Promise<void> {
   // Find batches in the same thread with a DIFFERENT source_message_id that have an audited invoice
-  const { data: relatedBatches } = await supabase
+  const { data: relatedBatches, error: batchesError } = await supabase
     .from('email_message_batches')
     .select('freight_invoice_document_id')
     .eq('org_id', orgId)
     .eq('source_thread_id', sourceThreadId)
     .neq('source_message_id', sourceMessageId)
     .not('freight_invoice_document_id', 'is', null);
+  if (batchesError) {
+    throw new Error(`phase1: re-audit batch query failed for thread ${sourceThreadId}: ${batchesError.message}`);
+  }
 
   if (!relatedBatches?.length) return;
 
   for (const batch of relatedBatches) {
     const invoiceDocId = batch.freight_invoice_document_id as string;
-    const { data: doc } = await supabase
+    const { data: doc, error: docError } = await supabase
       .from('documents')
       .select('processing_status')
       .eq('id', invoiceDocId)
       .eq('org_id', orgId)
       .single();
+    if (docError) {
+      throw new Error(`phase1: re-audit doc query failed for ${invoiceDocId}: ${docError.message}`);
+    }
 
     if (doc?.processing_status !== 'audited') continue;
 
-    await supabase
+    const { error: reauditError } = await supabase
       .from('documents')
       .update({ processing_status: 're_auditing', updated_at: new Date().toISOString() })
       .eq('id', invoiceDocId)
       .eq('org_id', orgId);
+    if (reauditError) {
+      throw new Error(`phase1: re-auditing status update failed for ${invoiceDocId}: ${reauditError.message}`);
+    }
 
     await phase2Queue.add(
       `phase2-reaudit-${invoiceDocId}`,
