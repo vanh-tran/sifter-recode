@@ -1,50 +1,43 @@
+// worker/src/stages/post-audit.ts
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { runDeterministicChecks } from '@sifter/core/audit/deterministic-checks';
 import { runAiAuditAgent } from '@sifter/core/audit/ai-audit-agent';
 import { insertFindingsAndUpdateInvoice } from '@sifter/core/audit/post-audit-db';
 import type { FindingDraft } from '@sifter/core/audit/types';
 import type { CheckResult } from '@sifter/core/audit/deterministic-checks';
+import type { PreGatheredContext } from './pre-gather.js';
 
 interface PostAuditInput {
   orgId: string;
   invoiceId: string;
-  bolDocumentIds: string[];
-  rateSheetId: string | null;
+  preGatheredContext: PreGatheredContext;
 }
 
 /**
  * Idempotent: skips if findings already exist for this invoiceId.
+ * For re-audit, caller deletes findings first.
  */
 export async function runPostAuditStage(
   supabase: SupabaseClient,
-  { orgId, invoiceId, bolDocumentIds, rateSheetId }: PostAuditInput
+  { orgId, invoiceId, preGatheredContext }: PostAuditInput
 ): Promise<void> {
   const { data: existingFindings } = await supabase
-    .from('findings')
-    .select('id')
-    .eq('invoice_id', invoiceId)
-    .eq('org_id', orgId)
-    .limit(1);
-
+    .from('findings').select('id').eq('invoice_id', invoiceId).eq('org_id', orgId).limit(1);
   if (existingFindings && existingFindings.length > 0) return;
 
   const { data: inv, error: invErr } = await supabase
     .from('invoices')
     .select('id, carrier_id, invoice_number, invoice_date, total_amount, created_at')
-    .eq('id', invoiceId)
-    .eq('org_id', orgId)
-    .single();
+    .eq('id', invoiceId).eq('org_id', orgId).single();
   if (invErr) throw new Error(`Failed to load invoice: ${invErr.message}`);
 
   const { data: items } = await supabase
-    .from('invoice_line_items')
-    .select('amount, description')
-    .eq('invoice_id', invoiceId)
-    .eq('org_id', orgId);
+    .from('invoice_line_items').select('amount, description')
+    .eq('invoice_id', invoiceId).eq('org_id', orgId);
 
   const lineItems = items ?? [];
-  const lineSum = lineItems.reduce((s: number, item: { amount: number }) => s + (item.amount ?? 0), 0);
-  const lineDescriptions = lineItems.map((item: { description: string }) => item.description ?? '');
+  const lineSum = lineItems.reduce((s: number, i: { amount: number }) => s + (i.amount ?? 0), 0);
+  const lineDescriptions = lineItems.map((i: { description: string }) => i.description ?? '');
 
   const deterministicResults = runDeterministicChecks({
     lineSum,
@@ -55,23 +48,6 @@ export async function runPostAuditStage(
     hasExistingClearedDuplicate: false,
     duplicateDelta: 0,
   });
-
-  let rateSheetJson: unknown = null;
-  let bolJson: unknown = null;
-
-  if (rateSheetId) {
-    const { data } = await supabase.from('rate_sheets').select('*').eq('id', rateSheetId).eq('org_id', orgId).single();
-    rateSheetJson = data ?? null;
-  }
-
-  if (bolDocumentIds.length > 0) {
-    const { data } = await supabase
-      .from('documents')
-      .select('id, ref_value, doc_type')
-      .eq('org_id', orgId)
-      .in('id', bolDocumentIds);
-    bolJson = data ?? null;
-  }
 
   const detFindings = deterministicResults
     .filter((r: CheckResult) => r.triggered)
@@ -86,9 +62,10 @@ export async function runPostAuditStage(
     }));
 
   const findings = await runAiAuditAgent({
-    invoiceJson: inv,
-    rateSheetJson: rateSheetJson ?? undefined,
-    bolJson: bolJson ?? undefined,
+    invoiceJson: { ...inv, lineItems },
+    invoiceRawText: preGatheredContext.invoiceRawText,
+    rateSheetText: preGatheredContext.rateSheetText ?? undefined,
+    bolTexts: preGatheredContext.bolTexts.length > 0 ? preGatheredContext.bolTexts : undefined,
     deterministicFindings: detFindings,
   });
 
