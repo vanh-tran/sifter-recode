@@ -172,16 +172,19 @@ export async function handleGmailSync(): Promise<{ processed: number }> {
         afterDate.setDate(afterDate.getDate() - EMAIL_BACKLOG_DAYS);
         const afterTimestamp = Math.floor(afterDate.getTime() / 1000);
 
+        console.log('[gmail-sync] listing messages...');
         const listResp = await gmail.users.messages.list({
           userId: 'me',
           q: `after:${afterTimestamp} has:attachment filename:pdf`,
           maxResults: 500,
         });
+        console.log('[gmail-sync] found', listResp.data.messages?.length ?? 0, 'messages');
 
         for (const msg of listResp.data.messages ?? []) {
           if (msg.id) await processMessage(gmail, orgId as string, msg.id, supabase);
         }
 
+        console.log('[gmail-sync] getting profile...');
         const profile = await gmail.users.getProfile({ userId: 'me' });
         newHistoryId = profile.data.historyId ?? null;
       } else {

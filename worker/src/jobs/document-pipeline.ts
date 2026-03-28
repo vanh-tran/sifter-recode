@@ -24,7 +24,14 @@ export async function handleDocumentPipeline(
   const mongoDocId = await runOcrStage(supabase, db, { orgId, documentId, gcsKey });
 
   const classifyResult = await runClassifyStage(supabase, db, { orgId, documentId, mongoDocId });
-  if (classifyResult.rejected) return;
+  if (classifyResult.rejected) {
+    await supabase
+      .from('documents')
+      .update({ processing_status: 'rejected', updated_at: new Date().toISOString() })
+      .eq('id', documentId)
+      .eq('org_id', orgId);
+    return;
+  }
 
   const invoiceId = await runNormalizeStage(supabase, db, { orgId, documentId, mongoDocId });
 
