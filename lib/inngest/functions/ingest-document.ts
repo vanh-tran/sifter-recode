@@ -21,7 +21,7 @@ export const ingestDocument = inngest.createFunction(
       const db = await getMongoDb();
       const id = randomUUID();
       await db.collection('document_ocr').insertOne({
-        _id: id as unknown,
+        _id: id as unknown as import("mongodb").ObjectId,
         orgId,
         documentId,
         rawText: text,

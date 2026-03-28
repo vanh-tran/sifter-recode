@@ -21,6 +21,6 @@ export * from './carriers/upsert.js';
 export * from './invoices/normalize-schema.js';
 // Server
 export * from './server/oauth-token-crypto.js';
-// Queue (populated in Task 4)
-// export * from './queue/index.js';
-// export * from './queue/types.js';
+// Queue
+export * from './queue/index.js';
+export * from './queue/types.js';
