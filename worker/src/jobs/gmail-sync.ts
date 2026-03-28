@@ -4,7 +4,8 @@ import type { gmail_v1 } from 'googleapis';
 import { createServiceRoleClient } from '@sifter/core/supabase/service-role';
 import { buildGmailClient, nextHistoryId } from '@sifter/core/email/gmail-poller';
 import { decryptOAuthSecret } from '@sifter/core/server/oauth-token-crypto';
-import { documentPipelineQueue, emailEventsQueue } from '@sifter/core/queue/index';
+import { phase1Queue, emailEventsQueue } from '@sifter/core/queue/index';
+import type { Phase1Payload } from '@sifter/core/queue/types';
 
 const EMAIL_BACKLOG_DAYS = Number(process.env.EMAIL_BACKLOG_DAYS ?? 60);
 
@@ -51,14 +52,8 @@ async function processMessage(
 
   const threadId = msg.data.threadId ?? messageId;
   const fromEmail = getHeader('from');
-  const toEmails = getHeader('to')
-    .split(',')
-    .map((s: string) => s.trim())
-    .filter(Boolean);
-  const ccEmails = getHeader('cc')
-    .split(',')
-    .map((s: string) => s.trim())
-    .filter(Boolean);
+  const toEmails = getHeader('to').split(',').map((s: string) => s.trim()).filter(Boolean);
+  const ccEmails = getHeader('cc').split(',').map((s: string) => s.trim()).filter(Boolean);
   const subject = getHeader('subject');
   const dateStr = getHeader('date');
   const receivedAt = dateStr ? new Date(dateStr).toISOString() : new Date().toISOString();
@@ -66,22 +61,20 @@ async function processMessage(
 
   await emailEventsQueue.add(
     `email-${messageId}`,
-    {
-      orgId,
-      threadId,
-      messageId,
-      fromEmail,
-      toEmails,
-      ccEmails,
-      subject,
-      body,
-      receivedAt,
-    },
+    { orgId, threadId, messageId, fromEmail, toEmails, ccEmails, subject, body, receivedAt },
     { jobId: `email-${messageId}` }
   );
 
   const attachments = findPdfAttachments(msg.data.payload);
   if (attachments.length === 0) return;
+
+  // Write fan-in batch BEFORE processing any attachments
+  await supabase.from('email_message_batches').upsert({
+    org_id: orgId,
+    source_message_id: messageId,
+    source_thread_id: threadId,
+    sibling_count: attachments.length,
+  }, { onConflict: 'org_id,source_message_id', ignoreDuplicates: true });
 
   const storage = getStorage();
   const bucket = storage.bucket(process.env.GCS_BUCKET!);
@@ -90,28 +83,29 @@ async function processMessage(
     if (!att.body?.attachmentId) continue;
 
     const attData = await gmail.users.messages.attachments.get({
-      userId: 'me',
-      messageId,
-      id: att.body.attachmentId,
+      userId: 'me', messageId, id: att.body.attachmentId,
     });
 
     const buf = Buffer.from(attData.data.data ?? '', 'base64url');
     const sha256 = createHash('sha256').update(buf).digest('hex');
 
     const { data: existing } = await supabase
-      .from('documents')
-      .select('id')
-      .eq('org_id', orgId)
-      .eq('sha256', sha256)
-      .maybeSingle();
-
-    if (existing) continue;
+      .from('documents').select('id').eq('org_id', orgId).eq('sha256', sha256).maybeSingle();
+    if (existing) {
+      // Duplicate attachment — still counts toward sibling_count; increment fan-in manually
+      await supabase.rpc('increment_batch_phase1', {
+        p_org_id: orgId,
+        p_source_message_id: messageId,
+        p_freight_invoice_doc_id: null,
+      });
+      continue;
+    }
 
     const filename = att.filename || `attachment-${att.body.attachmentId}.pdf`;
     const gcsKey = `orgs/${orgId}/emails/${messageId}/${filename}`;
     await bucket.file(gcsKey).save(buf, { contentType: 'application/pdf' });
 
-    const { data: doc } = await supabase
+    const { data: doc, error: docInsertError } = await supabase
       .from('documents')
       .insert({
         org_id: orgId,
@@ -128,17 +122,22 @@ async function processMessage(
       .select('id')
       .single();
 
+    if (docInsertError) {
+      throw new Error(`gmail-sync: failed to insert document for attachment ${filename}: ${docInsertError.message}`);
+    }
     if (!doc) continue;
 
-    await documentPipelineQueue.add(
-      `doc-${doc.id}`,
+    await phase1Queue.add(
+      `phase1-${doc.id}`,
       {
         orgId,
         documentId: doc.id,
         gcsKey,
         sourceType: 'email',
-      },
-      { jobId: `doc-${doc.id}` }
+        sourceMessageId: messageId,
+        sourceThreadId: threadId,
+      } satisfies Phase1Payload,
+      { jobId: `phase1-${doc.id}` }
     );
   }
 }
