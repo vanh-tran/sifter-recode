@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getAuthOrgContext } from '@/lib/server/auth-context';
 import { Storage } from '@google-cloud/storage';
 import { createHash, randomUUID } from 'crypto';
-import { documentPipelineQueue } from '@sifter/core/queue/index';
+import { phase1Queue } from '@sifter/core/queue/index';
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -37,10 +37,10 @@ export async function POST(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  await documentPipelineQueue.add(
-    `doc-${id}`,
+  await phase1Queue.add(
+    `phase1-${id}`,
     { orgId: ctx.orgId, documentId: id, gcsKey, sourceType: 'upload' },
-    { jobId: `doc-${id}` }
+    { jobId: `phase1-${id}` }
   );
 
   return NextResponse.json({ documentId: id });
