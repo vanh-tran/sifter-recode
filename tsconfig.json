@@ -19,7 +19,9 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@sifter/core": ["./packages/core/src/index.ts"],
+      "@sifter/core/*": ["./packages/core/src/*"]
     }
   },
   "include": [
