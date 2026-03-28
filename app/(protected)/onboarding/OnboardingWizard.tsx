@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { CheckCircle, Upload, Loader2 } from 'lucide-react';
+import { CheckCircle, Upload, Loader2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -58,7 +58,31 @@ function WelcomeStep({ orgName, onNext }: { orgName: string; onNext: () => void 
   );
 }
 
+const OAUTH_ERROR_MESSAGES: Record<string, string> = {
+  access_denied: 'Access was cancelled. Please try again.',
+  oauth_error: 'Something went wrong with the provider. Please try again.',
+  invalid_session: 'OAuth session expired. Please try connecting again.',
+  token_exchange_failed: "Couldn't complete the connection. Please try again.",
+  userinfo_failed: "Couldn't fetch your email address. Please try again.",
+  connection_failed: "Couldn't save the connection. Please try again.",
+};
+
 function ConnectMailboxStep({ onNext }: { onNext: () => void }) {
+  const [oauthError, setOauthError] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    const error = searchParams.get('error');
+    if (error) {
+      setOauthError(OAUTH_ERROR_MESSAGES[error] ?? 'Something went wrong. Please try again.');
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete('error');
+      router.replace(`${pathname}${params.size > 0 ? `?${params}` : ''}`);
+    }
+  }, [searchParams, router, pathname]);
+
   const { data, isLoading } = useQuery<{ mailboxes: Mailbox[] }>({
     queryKey: ['mailboxes'],
     queryFn: async () => {
@@ -81,15 +105,28 @@ function ConnectMailboxStep({ onNext }: { onNext: () => void }) {
         </p>
       </div>
 
+      {oauthError && (
+        <div className="flex items-center justify-between gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <span>{oauthError}</span>
+          <button
+            onClick={() => setOauthError(null)}
+            className="shrink-0 text-red-400 hover:text-red-600"
+            aria-label="Dismiss"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       <div className="flex gap-3 flex-wrap">
         <a
-          href="/api/oauth/gmail/connect"
+          href="/api/oauth/gmail/connect?return_to=onboarding"
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md border border-brand-border bg-brand-surface text-sm font-medium text-brand-primary hover:bg-brand-surface-muted transition-colors"
         >
           Connect Gmail
         </a>
         <a
-          href="/api/oauth/outlook/connect"
+          href="/api/oauth/outlook/connect?return_to=onboarding"
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md border border-brand-border bg-brand-surface text-sm font-medium text-brand-primary hover:bg-brand-surface-muted transition-colors"
         >
           Connect Outlook
