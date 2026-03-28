@@ -13,17 +13,26 @@ export function getRedisConnection(): Redis {
   return _redis;
 }
 
-export const documentPipelineQueue = new Queue<DocumentPipelinePayload>(
-  'document-pipeline',
-  { connection: getRedisConnection() }
+/** Defer BullMQ construction until first use so Next.js can import routes without Redis at build time. */
+function lazyQueue<T>(create: () => Queue<T>): Queue<T> {
+  let instance: Queue<T> | null = null;
+  return new Proxy({} as Queue<T>, {
+    get(_target, prop) {
+      if (!instance) instance = create();
+      const value = Reflect.get(instance, prop, instance);
+      return typeof value === 'function' ? (value as (...args: unknown[]) => unknown).bind(instance) : value;
+    },
+  });
+}
+
+export const documentPipelineQueue = lazyQueue<DocumentPipelinePayload>(() =>
+  new Queue<DocumentPipelinePayload>('document-pipeline', { connection: getRedisConnection() })
 );
 
-export const gmailSyncQueue = new Queue<GmailSyncPayload>(
-  'gmail-sync',
-  { connection: getRedisConnection() }
+export const gmailSyncQueue = lazyQueue<GmailSyncPayload>(() =>
+  new Queue<GmailSyncPayload>('gmail-sync', { connection: getRedisConnection() })
 );
 
-export const emailEventsQueue = new Queue<EmailEventsPayload>(
-  'email-events',
-  { connection: getRedisConnection() }
+export const emailEventsQueue = lazyQueue<EmailEventsPayload>(() =>
+  new Queue<EmailEventsPayload>('email-events', { connection: getRedisConnection() })
 );
