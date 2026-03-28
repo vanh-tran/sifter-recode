@@ -176,6 +176,7 @@ export async function runLinkDocumentsStage(
 
   const rows = links
     .filter(l => l.linkConfidence >= 0.3)
+    .filter(l => candidates.some(c => c.documentId === l.documentId))
     .map(l => {
       const candidate = candidates.find(c => c.documentId === l.documentId);
       return {
