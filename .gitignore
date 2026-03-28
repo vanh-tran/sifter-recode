@@ -62,3 +62,4 @@ next-env.d.ts
 /temp/*.json
 .worktrees/
 packages/core/dist/
+.worktrees/
