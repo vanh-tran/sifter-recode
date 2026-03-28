@@ -25,7 +25,6 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "googleapis": "^169.0.0",
-    "inngest": "^4.1.0",
     "isomorphic-dompurify": "^2.10.0",
     "lucide-react": "^0.575.0",
     "mongodb": "^7.1.1",

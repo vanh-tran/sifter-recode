@@ -54,3 +54,4 @@ next-env.d.ts
 # temp (calendar dump for verification — do not commit)
 /temp/*.json
 .worktrees/
+packages/core/dist/
