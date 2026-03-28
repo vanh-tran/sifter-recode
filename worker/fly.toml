@@ -1,0 +1,22 @@
+# Deploy from the pnpm workspace root (directory with package.json, pnpm-workspace.yaml,
+# packages/core, worker) so Docker receives the full monorepo as build context:
+#   cd /path/to/monorepo-root && fly deploy . --config worker/fly.toml
+# Local image:
+#   docker build -f worker/Dockerfile -t sifter-worker:local .
+# If flyctl resolves dockerfile paths from the deploy working directory instead of this
+# file's directory, use: fly deploy . --config worker/fly.toml --dockerfile worker/Dockerfile
+
+app = "sifter-worker"
+primary_region = "sjc"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+
+[env]
+  NODE_ENV = "production"
+
+# No [http_service] — worker only, no public HTTP
