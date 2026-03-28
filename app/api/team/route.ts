@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     .from('memberships')
     .select(`
       id, role, status, created_at, invited_by,
-      users ( id, email, full_name, avatar_url )
+      users!memberships_user_id_fkey ( id, email, full_name, avatar_url )
     `)
     .eq('org_id', ctx.orgId)
     .in('status', ['active', 'invited'])

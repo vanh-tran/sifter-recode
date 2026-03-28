@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     .from('carriers')
     .select(`
       id, name_normalized, scac, billing_email, billing_email_confirmed, created_at,
-      rate_sheets ( id, document_id, effective_date, uploaded_at, status,
+      rate_sheets ( id, document_id, effective_date, uploaded_at,
         documents ( filename )
       )
     `)
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
   const formatted = (carriers ?? []).map((c) => {
     type RateSheetRow = {
       id: string; document_id: string; effective_date: string | null;
-      uploaded_at: string; status: string;
+      uploaded_at: string;
       documents: { filename: string } | { filename: string }[] | null;
     };
     const sheets = ((c.rate_sheets as unknown) as RateSheetRow[] ?? []).sort(
@@ -58,13 +58,13 @@ export async function GET(request: NextRequest) {
       billing_email: c.billing_email ?? null,
       billing_email_confirmed: c.billing_email_confirmed,
       invoice_count: invoiceCounts[c.id] ?? 0,
-      rate_sheets: sheets.map((s) => {
+      rate_sheets: sheets.map((s, i) => {
         const doc = Array.isArray(s.documents) ? s.documents[0] : s.documents;
         return {
           id: s.id,
           filename: doc?.filename ?? 'rate-sheet.pdf',
           effective_date: s.effective_date,
-          status: s.status === 'current' ? 'current' : 'superseded',
+          status: i === 0 ? 'current' : 'superseded',
         };
       }),
     };

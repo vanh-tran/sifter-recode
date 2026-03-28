@@ -45,12 +45,22 @@ export default function Navbar() {
         <div className="relative flex justify-between items-center h-16">
           <div className="flex-shrink-0 flex items-center">
             <Link href="/dashboard" className="block" aria-label="Sifter home">
+              {/* Dark-colored mark on light UI; light-colored mark on dark UI */}
               <Image
                 src="/Sifter_Dark_Logo.png"
-                alt="Sifter"
+                alt=""
                 width={80}
                 height={16}
-                className="h-8 w-auto"
+                className="h-8 w-auto dark:hidden"
+                priority
+              />
+              <Image
+                src="/Sifter_Light_Logo.png"
+                alt=""
+                width={80}
+                height={16}
+                className="hidden h-8 w-auto dark:block"
+                priority
               />
             </Link>
           </div>
