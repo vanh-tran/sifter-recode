@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getAuthOrgContext } from '@/lib/server/auth-context';
 import { Storage } from '@google-cloud/storage';
 import { createHash, randomUUID } from 'crypto';
-import { inngest } from '@/lib/inngest/client';
+import { documentPipelineQueue } from '@sifter/core/queue/index';
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -37,10 +37,11 @@ export async function POST(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  await inngest.send({
-    name: 'sifter/document.received',
-    data: { orgId: ctx.orgId, documentId: id, gcsKey, sourceType: 'upload' },
-  });
+  await documentPipelineQueue.add(
+    `doc-${id}`,
+    { orgId: ctx.orgId, documentId: id, gcsKey, sourceType: 'upload' },
+    { jobId: `doc-${id}` }
+  );
 
   return NextResponse.json({ documentId: id });
 }

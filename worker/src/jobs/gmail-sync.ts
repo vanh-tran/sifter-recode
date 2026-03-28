@@ -1,5 +1,5 @@
 import { createHash } from 'crypto';
-import { Storage } from '@google-cloud/storage';
+import { getStorage } from '../gcs.js';
 import type { gmail_v1 } from 'googleapis';
 import { createServiceRoleClient } from '@sifter/core/supabase/service-role';
 import { buildGmailClient, nextHistoryId } from '@sifter/core/email/gmail-poller';
@@ -83,7 +83,7 @@ async function processMessage(
   const attachments = findPdfAttachments(msg.data.payload);
   if (attachments.length === 0) return;
 
-  const storage = new Storage();
+  const storage = getStorage();
   const bucket = storage.bucket(process.env.GCS_BUCKET!);
 
   for (const att of attachments) {

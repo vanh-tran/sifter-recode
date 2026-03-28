@@ -1,9 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { POST } from '@/app/api/documents/upload/route';
 import { NextRequest } from 'next/server';
+
+vi.mock('@sifter/core/queue/index', () => ({
+  documentPipelineQueue: {
+    add: vi.fn().mockResolvedValue(undefined),
+  },
+}));
 
 vi.mock('@/lib/supabase/server');
 vi.mock('@/lib/server/auth-context');
+
+import { POST } from '@/app/api/documents/upload/route';
 
 describe('POST /api/documents/upload', () => {
   beforeEach(() => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sumDeltaAmounts } from '@/lib/inngest/lib/post-audit-db';
+import { sumDeltaAmounts } from '@sifter/core/audit/post-audit-db';
 
 describe('sumDeltaAmounts', () => {
   it('sums deltas', () => {

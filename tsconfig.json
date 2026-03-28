@@ -19,7 +19,9 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@sifter/core": ["./packages/core/src/index.ts"],
+      "@sifter/core/*": ["./packages/core/src/*"]
     }
   },
   "include": [
@@ -30,5 +32,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "worker"]
+  "exclude": ["node_modules", "worker", "packages"]
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { matchInboundEmailToDispute } from '@/lib/inngest/functions/handle-inbound-email';
+import { matchInboundEmailToDispute } from '../../worker/src/jobs/email-events';
 
 describe('matchInboundEmailToDispute', () => {
   it('returns the dispute whose email_thread_id matches the inbound thread', () => {

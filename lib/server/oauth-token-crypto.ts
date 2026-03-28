@@ -29,5 +29,5 @@ export async function decryptOAuthSecret(ciphertext: string): Promise<string> {
     name: keyName,
     ciphertext: Buffer.from(ciphertext, 'base64'),
   });
-  return result.plaintext!.toString('utf-8');
+  return Buffer.from(result.plaintext!).toString('utf-8');
 }

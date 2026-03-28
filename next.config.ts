@@ -22,6 +22,7 @@ const cspDirectives = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  transpilePackages: ['@sifter/core'],
   async headers() {
     return [
       {

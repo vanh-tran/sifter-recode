@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+**/node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -35,6 +36,9 @@ yarn-error.log*
 !.env.example
 !worker/.env.example
 
+# Decoded GCP service account (from GCP_CREDENTIALS_JSON); set GOOGLE_APPLICATION_CREDENTIALS to this path locally
+gcp-sa-key.json
+
 # vercel
 .vercel
 
@@ -57,3 +61,4 @@ next-env.d.ts
 # temp (calendar dump for verification — do not commit)
 /temp/*.json
 .worktrees/
+packages/core/dist/
