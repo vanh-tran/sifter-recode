@@ -1,6 +1,10 @@
 import { KeyManagementServiceClient } from '@google-cloud/kms';
 
-const kms = new KeyManagementServiceClient();
+const kms = new KeyManagementServiceClient(
+  process.env.GCP_CREDENTIALS_JSON
+    ? { credentials: JSON.parse(Buffer.from(process.env.GCP_CREDENTIALS_JSON, 'base64').toString('utf-8')) }
+    : {}
+);
 
 export async function encryptOAuthSecret(plaintext: string): Promise<string> {
   const keyName = process.env.OAUTH_KMS_KEY_NAME;
