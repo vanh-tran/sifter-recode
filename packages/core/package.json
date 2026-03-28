@@ -20,7 +20,7 @@
     "@google-cloud/kms": "^4.2.0",
     "@google-cloud/storage": "^7.18.0",
     "@supabase/supabase-js": "^2.89.0",
-    "mongodb": "^6.3.0",
+    "mongodb": "^7.1.1",
     "openai": "^6.16.0",
     "googleapis": "^169.0.0",
     "pdf-parse": "^2.4.5"
