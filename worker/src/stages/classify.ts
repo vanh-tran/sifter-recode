@@ -67,7 +67,7 @@ export async function runClassifyStage(
 
   const gate = evaluateClassificationGate(classification);
 
-  await supabase
+  const { error: updateError } = await supabase
     .from('documents')
     .update({
       document_type: classification.documentType,
@@ -79,6 +79,10 @@ export async function runClassifyStage(
     })
     .eq('id', documentId)
     .eq('org_id', orgId);
+
+  if (updateError) {
+    throw new Error(`classify stage: DB write failed for document ${documentId}: ${updateError.message}`);
+  }
 
   return {
     documentType: classification.documentType,
