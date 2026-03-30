@@ -32,5 +32,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "worker", "packages"]
+  "exclude": ["node_modules", "worker", "packages", "__tests__", "e2e"]
 }

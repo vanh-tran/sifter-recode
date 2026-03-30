@@ -1,0 +1,53 @@
+version: 2
+
+updates:
+  # Root workspace — main Next.js app + packages/core (pnpm lockfile)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    target-branch: "main"
+    open-pull-requests-limit: 10
+    groups:
+      patch-and-minor:
+        update-types:
+          - "minor"
+          - "patch"
+      major:
+        update-types:
+          - "major"
+
+  # Worker subdirectory — standalone Node.js package (Fly.io deployment)
+  - package-ecosystem: "npm"
+    directory: "/worker"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    target-branch: "main"
+    open-pull-requests-limit: 10
+    groups:
+      patch-and-minor:
+        update-types:
+          - "minor"
+          - "patch"
+      major:
+        update-types:
+          - "major"
+
+  # GitHub Actions workflows
+  - package-ecosystem: "github-actions"
+    directory: "/.github/workflows"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    target-branch: "main"
+    open-pull-requests-limit: 10
+    groups:
+      patch-and-minor:
+        update-types:
+          - "minor"
+          - "patch"
+      major:
+        update-types:
+          - "major"

@@ -10,7 +10,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepare": "husky"
   },
   "dependencies": {
     "@google-cloud/kms": "^4.2.0",
@@ -54,8 +55,13 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
     "happy-dom": "^20.8.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.2"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": ["eslint --fix"]
   }
 }
