@@ -10,6 +10,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
+    "test:unit": "vitest run --exclude '__tests__/worker/**' --exclude '__tests__/integration/**'",
+    "test:worker": "vitest run '__tests__/worker/**'",
     "test:watch": "vitest",
     "prepare": "husky"
   },

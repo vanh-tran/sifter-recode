@@ -1,0 +1,55 @@
+name: CI — Worker
+
+on:
+  pull_request:
+    paths:
+      - 'worker/**'
+      - '__tests__/worker/**'
+      - 'packages/core/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+
+concurrency:
+  group: ci-worker-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: Lint, typecheck, test, and build worker
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck (worker)
+        run: |
+          if [ -f worker/tsconfig.json ]; then
+            pnpm exec tsc --project worker/tsconfig.json --noEmit
+          else
+            pnpm exec tsc --noEmit
+          fi
+
+      - name: Worker unit tests
+        run: pnpm test:worker
+
+      - name: Docker build (validation only)
+        if: ${{ hashFiles('worker/Dockerfile') != '' }}
+        run: docker build -f worker/Dockerfile .
