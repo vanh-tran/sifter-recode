@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:unit": "vitest run --exclude '__tests__/worker/**' --exclude '__tests__/integration/**'",
     "test:worker": "vitest run '__tests__/worker/**'",
+    "test:integration": "vitest run '__tests__/integration/**'",
     "test:watch": "vitest",
     "prepare": "husky"
   },

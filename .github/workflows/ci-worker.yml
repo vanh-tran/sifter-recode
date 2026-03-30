@@ -53,3 +53,8 @@ jobs:
       - name: Docker build (validation only)
         if: ${{ hashFiles('worker/Dockerfile') != '' }}
         run: docker build -f worker/Dockerfile .
+
+  integration:
+    name: Integration tests
+    needs: ci
+    uses: ./.github/workflows/integration-tests.yml

@@ -67,3 +67,8 @@ jobs:
       - name: Security audit
         run: pnpm audit --audit-level=high
         continue-on-error: true
+
+  integration:
+    name: Integration tests
+    needs: ci
+    uses: ./.github/workflows/integration-tests.yml
