@@ -11,20 +11,20 @@
   },
   "dependencies": {
     "@sifter/core": "workspace:*",
-    "@google-cloud/storage": "^7.18.0",
-    "bullmq": "^5.0.0",
-    "ioredis": "^5.3.0",
+    "@google-cloud/storage": "^7.21.0",
+    "bullmq": "^5.78.0",
+    "ioredis": "^5.11.1",
     "dotenv": "^16.3.1",
     "express": "^4.18.0",
     "@bull-board/api": "^6.0.0",
     "@bull-board/express": "^6.0.0",
     "googleapis": "^169.0.0",
-    "openai": "^6.16.0"
+    "openai": "^6.42.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.0",
     "@types/node": "^20",
-    "tsx": "^4.21.0",
+    "tsx": "^4.22.4",
     "typescript": "^5"
   }
 }
