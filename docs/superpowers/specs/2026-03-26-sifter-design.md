@@ -27,9 +27,7 @@ Sifter is an AI-powered freight invoice auditing SaaS for SMB companies. The pri
 | Structured data | Supabase (Postgres) | All entities: orgs, invoices, findings, disputes, jobs |
 | File storage | Google Cloud Storage (GCS) | Raw PDFs, rate sheets, BOLs, proof clip images |
 | OCR intermediates | MongoDB | Raw OCR text, extraction intermediates |
-| Job orchestration | Inngest | Durable step functions, retries, TypeScript SDK |
-
-**Why Inngest over n8n:** More stable, built-in durable step functions, managed hosting, first-class TypeScript SDK.
+| Job orchestration | BullMQ + Upstash Redis + Fly.io worker | Persistent Node worker, retries, no serverless timeout on pipeline work |
 
 ### High-Level Data Flow
 ```
@@ -37,11 +35,11 @@ Email / Manual Upload
         ↓
    GCS (raw file)
         ↓
-  Inngest Phase 1: OCR + Classify
+  Worker Phase 1: OCR + Classify
         ↓
    Gate: abort if low parse quality
         ↓
-  Inngest Phase 2: Normalize (LLM)
+  Worker Phase 2: Normalize (LLM)
         ↓
   Supabase upsert + dedup check
         ↓

@@ -6,7 +6,7 @@
 
 **Architecture:** All dispute state lives in a single `disputes` row per invoice (UNIQUE on `invoice_id`); every send and inbound reply is appended to `dispute_messages` as immutable history. The UI panels (`DisputeDraftPanel`, `DisputeActivePanel`) render inside the existing Invoice Detail right panel rather than as separate pages, keeping the AP workflow single-screen.
 
-**Tech Stack:** Next.js 16 App Router route handlers, Supabase Postgres (disputes + dispute_messages tables), OpenAI `gpt-4o` for letter generation, Gmail API (`messages.send`) / Microsoft Graph for email sending, Inngest for inbound email event handling, TanStack Query v5, Tailwind CSS 4, Radix UI, Lucide React.
+**Tech Stack:** Next.js 16 App Router route handlers, Supabase Postgres (disputes + dispute_messages tables), OpenAI `gpt-4o` for letter generation, Gmail API (`messages.send`) / Microsoft Graph for email sending, Fly.io worker + BullMQ for inbound carrier reply handling, TanStack Query v5, Tailwind CSS 4, Radix UI, Lucide React.
 
 ---
 
@@ -2551,211 +2551,18 @@ Expected: PASS
 
 ---
 
-### Task 8: Carrier Reply Ingestion (Inngest Function)
+### Task 8: Carrier Reply Ingestion (worker)
+
+Inbound carrier replies are handled by the **`email-events` BullMQ job** on the Fly.io worker. Gmail sync enqueues each message; the worker uses a **service-role** Supabase client to match `email_thread_id` to non-resolved disputes, append `dispute_messages`, update dispute status, and insert notifications.
+
+**Reference:** [2026-03-28-worker-architecture.md](./2026-03-28-worker-architecture.md) (job `worker/src/jobs/email-events.ts`).
 
 **Files:**
-- Create: `lib/inngest/client.ts`
-- Create: `lib/inngest/functions/handle-inbound-email.ts`
-- Create: `app/api/inngest/route.ts`
-- Test: `tests/lib/inngest/handle-inbound-email.test.ts`
+- `worker/src/jobs/email-events.ts` — `matchInboundEmailToDispute`, `handleEmailEvents`
+- `__tests__/worker/email-events-match.test.ts` — unit tests for matching rules
 
----
-
-- [ ] **Step 1: Write the failing test**
-
-```typescript
-// tests/lib/inngest/handle-inbound-email.test.ts
-// Unit test for the matching logic — no actual Inngest SDK calls
-
-import { matchInboundEmailToDispute } from '@/lib/inngest/functions/handle-inbound-email';
-
-describe('matchInboundEmailToDispute', () => {
-  it('returns the dispute whose email_thread_id matches the inbound thread', () => {
-    const disputes = [
-      { id: 'd-1', email_thread_id: 'thread-abc', status: 'sent' },
-      { id: 'd-2', email_thread_id: 'thread-xyz', status: 'sent' },
-    ];
-    const result = matchInboundEmailToDispute(disputes, 'thread-abc');
-    expect(result?.id).toBe('d-1');
-  });
-
-  it('returns null when no dispute matches', () => {
-    const disputes = [{ id: 'd-1', email_thread_id: 'thread-abc', status: 'sent' }];
-    expect(matchInboundEmailToDispute(disputes, 'thread-no-match')).toBeNull();
-  });
-
-  it('returns null when disputes list is empty', () => {
-    expect(matchInboundEmailToDispute([], 'thread-abc')).toBeNull();
-  });
-
-  it('does not match a resolved dispute', () => {
-    const disputes = [{ id: 'd-1', email_thread_id: 'thread-abc', status: 'resolved' }];
-    expect(matchInboundEmailToDispute(disputes, 'thread-abc')).toBeNull();
-  });
-});
-```
-
-- [ ] **Step 2: Run test to verify it fails**
-
-Run: `pnpm test tests/lib/inngest/handle-inbound-email.test.ts`
-Expected: FAIL with "Cannot find module"
-
-- [ ] **Step 3: Write the Inngest client and function**
-
-```typescript
-// lib/inngest/client.ts
-import { Inngest } from 'inngest';
-
-export const inngest = new Inngest({ id: 'sifter' });
-```
-
-```typescript
-// lib/inngest/functions/handle-inbound-email.ts
-/**
- * Inngest function: handle-inbound-email
- *
- * Triggered by `email.received` event from the Gmail/Outlook poller.
- * Matches the inbound email to an open dispute by email_thread_id.
- * If matched:
- *   - Appends inbound dispute_message row
- *   - Sets disputes.status = 'carrier_replied'
- *   - Emits notification.created event (stub; Plan 5 implements notifications)
- * If not matched:
- *   - Emits email.unmatched event for the document ingestion pipeline
- */
-
-import { inngest } from '@/lib/inngest/client';
-import { createClient } from '@/lib/supabase/server';
-
-interface InboundEmailEvent {
-  data: {
-    org_id: string;
-    thread_id: string;
-    message_id: string;
-    from_email: string;
-    to_emails: string[];
-    cc_emails?: string[];
-    subject: string;
-    body: string;
-    received_at: string;
-  };
-}
-
-/** Pure matching logic — exported for unit testing */
-export function matchInboundEmailToDispute(
-  disputes: Array<{ id: string; email_thread_id: string | null; status: string }>,
-  threadId: string
-): { id: string; email_thread_id: string | null; status: string } | null {
-  return (
-    disputes.find(
-      d =>
-        d.email_thread_id === threadId &&
-        d.status !== 'resolved'
-    ) ?? null
-  );
-}
-
-export const handleInboundEmail = inngest.createFunction(
-  { id: 'handle-inbound-email', name: 'Handle Inbound Email' },
-  { event: 'email.received' },
-  async ({ event, step }: { event: InboundEmailEvent; step: any }) => {
-    const { org_id, thread_id, message_id, from_email, to_emails, cc_emails, subject, body, received_at } =
-      event.data;
-
-    const supabase = await createClient();
-
-    // Step 1: Find all open disputes for this org with a thread_id set
-    const matchedDispute = await step.run('match-dispute', async () => {
-      const { data: disputes } = await supabase
-        .from('disputes')
-        .select('id, email_thread_id, status')
-        .eq('org_id', org_id)
-        .not('email_thread_id', 'is', null)
-        .neq('status', 'resolved');
-
-      return matchInboundEmailToDispute(disputes ?? [], thread_id);
-    });
-
-    if (!matchedDispute) {
-      // Forward to document ingestion pipeline
-      await step.sendEvent('forward-to-ingestion', {
-        name: 'email.unmatched',
-        data: event.data,
-      });
-      return { matched: false };
-    }
-
-    // Step 2: Append inbound dispute_message
-    await step.run('append-inbound-message', async () => {
-      await supabase.from('dispute_messages').insert({
-        org_id,
-        dispute_id: matchedDispute.id,
-        direction: 'inbound',
-        from_email,
-        to_emails,
-        cc_emails: cc_emails ?? [],
-        subject,
-        body,
-        email_message_id: message_id,
-        email_thread_id: thread_id,
-        sent_at: received_at,
-      });
-    });
-
-    // Step 3: Update dispute status to carrier_replied
-    await step.run('update-dispute-status', async () => {
-      await supabase
-        .from('disputes')
-        .update({ status: 'carrier_replied', updated_at: new Date().toISOString() })
-        .eq('id', matchedDispute.id)
-        .eq('org_id', org_id);
-    });
-
-    // Step 4: Emit notification event (Plan 5 will handle this)
-    await step.sendEvent('emit-notification', {
-      name: 'notification.created',
-      data: {
-        org_id,
-        type: 'carrier_replied',
-        dispute_id: matchedDispute.id,
-        message: `Carrier replied to your dispute`,
-      },
-    });
-
-    return { matched: true, dispute_id: matchedDispute.id };
-  }
-);
-```
-
-```typescript
-// app/api/inngest/route.ts
-/**
- * Inngest webhook endpoint.
- * Registers all Inngest functions with the SDK.
- */
-
-import { serve } from 'inngest/next';
-import { inngest } from '@/lib/inngest/client';
-import { handleInboundEmail } from '@/lib/inngest/functions/handle-inbound-email';
-
-export const { GET, POST, PUT } = serve({
-  client: inngest,
-  functions: [handleInboundEmail],
-});
-```
-
-- [ ] **Step 4: Run test to verify it passes**
-
-Run: `pnpm test tests/lib/inngest/handle-inbound-email.test.ts`
-Expected: PASS
-
-- [ ] **Step 5: Install Inngest SDK**
-
-Run: `pnpm add inngest`
-
-- [ ] **Step 6: Commit**
-
-`git add lib/inngest/client.ts lib/inngest/functions/handle-inbound-email.ts app/api/inngest/route.ts && git commit -m "feat: Inngest inbound email handler matches carrier replies to disputes"`
+- [ ] **Step 1:** Align dispute / notification inserts with the schema expected by the product UI.
+- [ ] **Step 2:** Run `pnpm test __tests__/worker/email-events-match.test.ts` — expect PASS.
 
 ---
 

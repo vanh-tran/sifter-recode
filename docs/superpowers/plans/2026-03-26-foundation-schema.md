@@ -8,7 +8,7 @@
 
 ## Goal
 
-Land the v2 schema in Supabase, fix stale column references in the findings API, add `role` to the auth context, build a hardcoded RBAC module, gate all invoice and findings routes behind `requirePermission`, and wire up the Inngest client so job-dispatch code can be written in subsequent tasks.
+Land the v2 schema in Supabase, fix stale column references in the findings API, add `role` to the auth context, build a hardcoded RBAC module, and gate all invoice and findings routes behind `requirePermission`. Background job wiring (BullMQ + worker) is covered in the [worker architecture plan](./2026-03-28-worker-architecture.md).
 
 ---
 
@@ -24,12 +24,9 @@ lib/server/
 
 app/api/
   ├── invoices/route.ts              ← requirePermission('invoices:read')
-  ├── findings/route.ts              ← requirePermission('findings:read')
-  └── inngest/route.ts               ← Inngest webhook handler
+  └── findings/route.ts              ← requirePermission('findings:read')
 
-lib/inngest/
-  ├── client.ts                      ← Inngest client singleton
-  └── types.ts                       ← typed event map
+packages/core/ + worker/             ← queues & pipeline (see worker architecture plan)
 
 vitest.config.ts                     ← test runner config
 ```
@@ -40,7 +37,7 @@ vitest.config.ts                     ← test runner config
 
 - **Next.js** 16 (App Router)
 - **Supabase** (Postgres + Auth)
-- **Inngest** (durable job orchestration)
+- **BullMQ + Fly.io worker** (durable background jobs — see worker architecture plan)
 - **Vitest** (unit tests — no Jest)
 - **pnpm** (package manager)
 - **TypeScript** strict
@@ -1258,198 +1255,14 @@ git commit -m "feat: gate invoices and findings API routes with requirePermissio
 
 ---
 
-## Task 6 — Inngest Client
+## Task 6 — Background jobs (defer to worker plan)
 
-### Files
+Pipeline orchestration runs in a **Fly.io worker** with **BullMQ** on **Upstash Redis**; the Next.js app **enqueues** jobs via `@sifter/core`. Follow [2026-03-28-worker-architecture.md](./2026-03-28-worker-architecture.md) for workspaces, queue definitions, upload route wiring, and deployment.
 
-| Action | Path |
-|--------|------|
-| Install | `inngest` package |
-| Create | `lib/inngest/types.ts` |
-| Create | `lib/inngest/client.ts` |
-| Create | `app/api/inngest/route.ts` |
-| Create | `vitest.config.ts` |
-| Test   | `__tests__/inngest/client.test.ts` |
+### Steps (summary)
 
-### Steps
-
-- [ ] **Write failing test** — assert the client and event types export correctly
-
-```typescript
-// __tests__/inngest/client.test.ts
-import { describe, it, expect } from 'vitest';
-
-describe('Inngest client', () => {
-  it('exports a named inngest client', async () => {
-    const mod = await import('@/lib/inngest/client');
-    expect(mod.inngest).toBeDefined();
-    expect(typeof mod.inngest.send).toBe('function');
-  });
-
-  it('exports event types without throwing', async () => {
-    // Just importing is enough — TypeScript would catch shape errors at compile time
-    await expect(import('@/lib/inngest/types')).resolves.toBeDefined();
-  });
-});
-```
-
-- [ ] **Run to verify fail**
-
-```bash
-pnpm vitest run __tests__/inngest/client.test.ts
-# Expected: FAIL — module does not exist yet
-```
-
-- [ ] **Install Inngest**
-
-```bash
-pnpm add inngest
-```
-
-- [ ] **Write implementation** — `vitest.config.ts`
-
-```typescript
-// vitest.config.ts
-import { defineConfig } from 'vitest/config';
-import path from 'path';
-
-export default defineConfig({
-  test: {
-    environment: 'node',
-    globals: false,
-    include: ['__tests__/**/*.test.ts'],
-    alias: {
-      '@': path.resolve(__dirname, '.'),
-    },
-  },
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, '.'),
-    },
-  },
-});
-```
-
-- [ ] **Write implementation** — `lib/inngest/types.ts`
-
-```typescript
-// lib/inngest/types.ts
-// Typed event map for the Sifter Inngest pipeline.
-// Add new event types here as new pipeline steps are introduced.
-
-export type SifterEvents = {
-  /**
-   * Fired when a new document lands (email attachment or manual upload).
-   * Triggers Phase 1: OCR + classify.
-   */
-  'sifter/document.received': {
-    data: {
-      orgId: string;
-      documentId: string;
-      gcsKey: string;
-      sourceType: 'email' | 'upload' | 'api';
-    };
-  };
-
-  /**
-   * Fired when OCR + classification succeeds and the document is a freight invoice.
-   * Triggers Phase 2: normalize (LLM).
-   */
-  'sifter/document.classified': {
-    data: {
-      orgId: string;
-      documentId: string;
-      mongodbDocumentId: string;
-    };
-  };
-
-  /**
-   * Fired when invoice normalization completes and the invoice row is upserted.
-   * Triggers the audit pipeline (deterministic + AI checks).
-   */
-  'sifter/invoice.normalized': {
-    data: {
-      orgId: string;
-      invoiceId: string;
-    };
-  };
-
-  /**
-   * Fired when the audit pipeline completes.
-   * Triggers finding dedup + invoice status update.
-   */
-  'sifter/invoice.audited': {
-    data: {
-      orgId: string;
-      invoiceId: string;
-      findingCount: number;
-    };
-  };
-};
-```
-
-- [ ] **Write implementation** — `lib/inngest/client.ts`
-
-```typescript
-// lib/inngest/client.ts
-import { Inngest } from 'inngest';
-import type { SifterEvents } from './types';
-
-/**
- * Singleton Inngest client for the Sifter pipeline.
- * Import this wherever you need to send events or define functions.
- *
- * @example
- *   await inngest.send({
- *     name: 'sifter/document.received',
- *     data: { orgId, documentId, gcsKey, sourceType: 'upload' },
- *   });
- */
-export const inngest = new Inngest<SifterEvents>({
-  id: 'sifter',
-  // INNGEST_EVENT_KEY and INNGEST_SIGNING_KEY are read from env automatically.
-});
-```
-
-- [ ] **Write implementation** — `app/api/inngest/route.ts`
-
-```typescript
-// app/api/inngest/route.ts
-/**
- * Inngest webhook endpoint.
- * Inngest Cloud calls this URL to deliver jobs and check function registrations.
- * URL to configure in Inngest dashboard: https://your-domain.com/api/inngest
- */
-import { serve } from 'inngest/next';
-import { inngest } from '@/lib/inngest/client';
-
-// Register all Inngest functions here as they are created.
-// Example:
-//   import { processDocument } from '@/lib/inngest/functions/process-document';
-//   export const { GET, POST, PUT } = serve({ client: inngest, functions: [processDocument] });
-
-export const { GET, POST, PUT } = serve({
-  client: inngest,
-  functions: [
-    // functions will be imported and listed here
-  ],
-});
-```
-
-- [ ] **Run to verify pass**
-
-```bash
-pnpm vitest run __tests__/inngest/client.test.ts
-# Expected: PASS
-```
-
-- [ ] **Commit**
-
-```bash
-git add lib/inngest/types.ts lib/inngest/client.ts app/api/inngest/route.ts \
-        vitest.config.ts __tests__/inngest/client.test.ts
-git commit -m "feat: add Inngest client, event type map, and webhook route"
-```
+- [ ] Complete **Tasks 1–5** of this foundation plan (schema, RBAC, API gates) first.
+- [ ] Implement queues + worker per the worker plan; ensure `vitest.config.ts` covers `__tests__/**/*.test.ts` (may already exist from earlier tasks).
 
 ---
 
@@ -1458,9 +1271,8 @@ git commit -m "feat: add Inngest client, event type map, and webhook route"
 Add to `.env.local` (never commit):
 
 ```bash
-# Inngest
-INNGEST_EVENT_KEY=...        # from Inngest dashboard → Event Keys
-INNGEST_SIGNING_KEY=...      # from Inngest dashboard → Signing Key
+# Queues (Vercel app + Fly worker) — see worker architecture spec
+UPSTASH_REDIS_URL=...
 ```
 
 ---
@@ -1468,9 +1280,8 @@ INNGEST_SIGNING_KEY=...      # from Inngest dashboard → Signing Key
 ## Full Run Order
 
 ```bash
-# 1. Install test runner and Inngest
+# 1. Install test runner
 pnpm add -D vitest
-pnpm add inngest
 
 # 2. Run all foundation tests together
 pnpm vitest run __tests__/
@@ -1487,6 +1298,6 @@ supabase db push
 - [ ] `supabase db push` applies the migration without errors on a clean project
 - [ ] `GET /api/invoices` returns 401 for unauthenticated requests, 403 for unauthorised roles, 200 for authorised roles
 - [ ] `GET /api/findings` same pattern
-- [ ] `POST /api/inngest` returns 200 (Inngest handshake) when `INNGEST_EVENT_KEY` and `INNGEST_SIGNING_KEY` are set
+- [ ] With `UPSTASH_REDIS_URL` set, document upload enqueues a pipeline job (see worker plan QA checklist)
 - [ ] `getAuthOrgContext` returns `role` in all success paths
 - [ ] No `leak_type` column references remain in `app/api/findings/route.ts`

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace Inngest with BullMQ + Upstash Redis + Fly.io worker — a persistent Node.js process that runs the full document pipeline without serverless timeout constraints.
+**Goal:** Run the full document pipeline (and related jobs) in a **BullMQ + Upstash Redis + Fly.io worker** — a persistent Node.js process without serverless timeout constraints.
 
 **Architecture:** Vercel enqueues jobs via BullMQ; a Fly.io worker polls three queues (`document-pipeline`, `gmail-sync`, `email-events`) and runs all processing end-to-end. `lib/` shared code moves to a `packages/core/` workspace package (`@sifter/core`) so the worker image never contains Next.js.
 
@@ -30,7 +30,7 @@ packages/core/
     ├── audit/deterministic-checks.ts # moved from lib/
     ├── audit/ai-audit-agent.ts       # moved from lib/
     ├── audit/gather-context.ts       # moved from lib/
-    ├── audit/post-audit-db.ts        # moved from lib/inngest/lib/
+    ├── audit/post-audit-db.ts        # moved from lib/ (or authored in core)
     ├── carriers/upsert.ts            # moved from lib/
     ├── invoices/normalize-schema.ts  # moved from lib/
     ├── server/oauth-token-crypto.ts  # moved from lib/
@@ -60,16 +60,12 @@ worker/fly.toml
 
 **Modified files:**
 - `pnpm-workspace.yaml` — add packages: entries
-- `package.json` (root) — rename to `sifter-web`, remove inngest dep later
+- `package.json` (root) — rename to `sifter-web` if not already
 - `tsconfig.json` (root) — add `@sifter/core/*` path alias
 - `next.config.ts` — add `transpilePackages: ['@sifter/core']`
 - `worker/package.json` — add bullmq, ioredis, express, @bull-board, googleapis, pdf-parse, @google-cloud/storage, @google-cloud/kms
-- `app/api/documents/upload/route.ts` — swap `inngest.send` → `documentPipelineQueue.add`
+- `app/api/documents/upload/route.ts` — call `documentPipelineQueue.add(...)` after upload
 - All `lib/` files that stay — update `@/lib/` internal imports (they still work as-is via root tsconfig alias, no change needed)
-
-**Deleted files (Task 11 only):**
-- `lib/inngest/` (all files)
-- `app/api/inngest/route.ts`
 
 ---
 
@@ -254,7 +250,7 @@ This task is a mechanical copy-and-fix. Files moved:
 | `lib/audit/deterministic-checks.ts` | `packages/core/src/audit/deterministic-checks.ts` |
 | `lib/audit/ai-audit-agent.ts` | `packages/core/src/audit/ai-audit-agent.ts` |
 | `lib/audit/gather-context.ts` | `packages/core/src/audit/gather-context.ts` |
-| `lib/inngest/lib/post-audit-db.ts` | `packages/core/src/audit/post-audit-db.ts` |
+| `lib/audit/post-audit-db.ts` (or equivalent) | `packages/core/src/audit/post-audit-db.ts` |
 | `lib/carriers/upsert.ts` | `packages/core/src/carriers/upsert.ts` |
 | `lib/invoices/normalize-schema.ts` | `packages/core/src/invoices/normalize-schema.ts` |
 | `lib/server/oauth-token-crypto.ts` | `packages/core/src/server/oauth-token-crypto.ts` |
@@ -299,7 +295,7 @@ Copy these four files, updating any `@/lib/` imports to relative paths:
 
 `packages/core/src/audit/gather-context.ts` — copy verbatim.
 
-`packages/core/src/audit/post-audit-db.ts` — copy from `lib/inngest/lib/post-audit-db.ts`, replacing:
+`packages/core/src/audit/post-audit-db.ts` — copy from the app `lib/` source (or write fresh), replacing:
 - `@/lib/audit/types` → `'./types.js'`
 
 - [ ] **Step 9: Copy carriers/upsert.ts and invoices/normalize-schema.ts**
@@ -364,7 +360,7 @@ cd /path/to/sifter-recode
 pnpm build 2>&1 | tail -20
 ```
 
-Expected: Build completes. Ignore warnings about inngest; there should be no errors from `@sifter/core`.
+Expected: Build completes with no errors from `@sifter/core`.
 
 - [ ] **Step 5: Commit**
 
@@ -1117,10 +1113,7 @@ export async function handleDocumentPipeline(
 
 - [ ] **Step 2: Create worker/src/jobs/gmail-sync.ts**
 
-This replaces `lib/inngest/functions/gmail-sync-cron.ts`. Key differences:
-- Uses `emailEventsQueue.add()` instead of `inngest.send()`
-- Uses `documentPipelineQueue.add()` instead of `inngest.send()`
-- `processMessage` is refactored to enqueue rather than emit events
+Gmail sync job: enqueue follow-up work via `emailEventsQueue.add()` and `documentPipelineQueue.add()` from `processMessage` (no HTTP callback orchestration).
 
 ```ts
 import { createHash } from 'crypto';
@@ -1312,7 +1305,7 @@ export async function handleGmailSync(): Promise<{ processed: number }> {
 
 - [ ] **Step 3: Create worker/src/jobs/email-events.ts**
 
-This replaces `lib/inngest/functions/handle-inbound-email.ts`. Uses service role client (worker has no cookie/auth context).
+Inbound email / dispute matching: service-role Supabase client in the worker (no cookie/auth context).
 
 ```ts
 import type { Job } from 'bullmq';
@@ -1626,34 +1619,19 @@ git commit -m "feat: add worker orchestration entry point with autoscaler and Bu
 
 ## Task 8: Update Next.js API Routes to Enqueue via BullMQ
 
-Two files in the Next.js app currently call `inngest.send(...)`. Replace those calls with `documentPipelineQueue.add(...)`.
-
 **Files:**
 - Modify: `app/api/documents/upload/route.ts`
 
-(The `lib/inngest/functions/gmail-sync-cron.ts` enqueue calls are replaced by the new worker — that file is deleted in Task 11.)
-
 - [ ] **Step 1: Update app/api/documents/upload/route.ts**
 
-Replace:
-```ts
-import { inngest } from '@/lib/inngest/client';
-```
+Use:
 
-With:
 ```ts
 import { documentPipelineQueue } from '@sifter/core/queue/index';
 ```
 
-Replace:
-```ts
-await inngest.send({
-  name: 'sifter/document.received',
-  data: { orgId: ctx.orgId, documentId: id, gcsKey, sourceType: 'upload' },
-});
-```
+After the document row is inserted, enqueue:
 
-With:
 ```ts
 await documentPipelineQueue.add(`doc-${id}`, {
   orgId: ctx.orgId,
@@ -1662,6 +1640,8 @@ await documentPipelineQueue.add(`doc-${id}`, {
   sourceType: 'upload',
 }, { jobId: `doc-${id}` });
 ```
+
+(Adjust queue name / payload field names to match `packages/core/src/queue/types.ts`.)
 
 - [ ] **Step 2: Verify Next.js build still passes**
 
@@ -1675,7 +1655,7 @@ Expected: no errors. The `@sifter/core` import resolves via workspace + transpil
 
 ```bash
 git add app/api/documents/upload/route.ts
-git commit -m "feat: swap inngest.send → documentPipelineQueue.add in upload route"
+git commit -m "feat: enqueue document pipeline from upload route via BullMQ"
 ```
 
 ---
@@ -1749,40 +1729,6 @@ git commit -m "feat: add Fly.io Dockerfile and fly.toml for sifter-worker"
 
 ---
 
-## Task 10: Remove Inngest
-
-**Status: DONE** (branch `feature/worker-architecture`, commit `98d4d709`). Run after Tasks 1–9; ideally after worker is deployed and draining queues (or accept merge risk if staging verifies immediately after).
-
-**Files deleted:**
-- `lib/inngest/` (entire directory)
-- `app/api/inngest/route.ts`
-
-**Files modified:**
-- `package.json` (root) — removed `inngest` dependency
-- `.gitignore` — `packages/core/dist/` (build output not committed; run `cd packages/core && pnpm build` in CI/dev before tests that resolve `@sifter/core` to `dist`)
-
-**Tests migrated** (logic unchanged; imports point at worker / core):
-- `__tests__/audit/post-audit-db.test.ts` — `sumDeltaAmounts` from `@sifter/core/audit/post-audit-db`
-- `__tests__/worker/email-events-match.test.ts` — `matchInboundEmailToDispute` from `worker/src/jobs/email-events`
-- Removed: `__tests__/inngest/client.test.ts`, `registry.test.ts` (Inngest-specific)
-
-- [x] **Step 1: Delete lib/inngest/** — `rm -rf lib/inngest/`
-- [x] **Step 2: Delete app/api/inngest/route.ts**
-- [x] **Step 3: Remove inngest from root package.json**
-- [x] **Step 4: Run pnpm install to sync lockfile** (`pnpm install --no-frozen-lockfile` if lockfile was frozen in CI)
-- [x] **Step 5: Verify Next.js build passes** — `pnpm build`
-- [x] **Step 6: Verify no lingering inngest imports in app code**
-
-```bash
-grep -r "inngest" app/ lib/ __tests__/ --include="*.ts" --include="*.tsx" -l
-```
-
-Expected: no output (empty). Older docs under `docs/superpowers/plans/*` may still mention Inngest historically — exclude `docs/` if grepping the whole repo.
-
-- [x] **Step 7: Commit** — `chore: remove Inngest — fully replaced by BullMQ + Fly.io worker` (`98d4d709`)
-
----
-
 ## Self-Review
 
 **Spec coverage check:**
@@ -1798,7 +1744,7 @@ Expected: no output (empty). Older docs under `docs/superpowers/plans/*` may sti
 | §7 Autoscaler with Fly.io Machines API | ✅ Task 7 (scaler.ts) |
 | §8 Fly.io Dockerfile + fly.toml | ✅ Task 9 |
 | §9 Bull Board observability on :9999 | ✅ Task 7 (board.ts) |
-| §10 Migration path — clean cutover | ✅ Task 10 |
+| §10 Adoption checklist | ✅ Tasks 1–9 |
 | §11 Env vars documented | ✅ fly.toml + code uses process.env |
 
 **No placeholders found.**
@@ -1813,27 +1759,17 @@ Use this section for staging or production acceptance. **Superpowers:** `verific
 
 ### A. Repository & CI (no running services)
 
-1. **No Inngest in application code**
+1. **Producers** — API routes that start the pipeline use `@sifter/core` queue helpers (e.g. `documentPipelineQueue.add` on upload). No long-running OCR/LLM work in route handlers.
 
-   ```bash
-   grep -rE 'inngest|INNGEST' app lib __tests__ --include='*.ts' --include='*.tsx' || true
-   ```
-
-   Expected: no matches.
-
-2. **Dependencies** — Root `package.json` must not list `"inngest"`.
-
-3. **Removed paths** — No `lib/inngest/`; no `app/api/inngest/route.ts`.
-
-4. **Unit tests** — From Next.js app root (worktree):
+2. **Unit tests** — From Next.js app root (worktree):
 
    ```bash
    cd packages/core && pnpm build && cd ../.. && pnpm test && pnpm build
    ```
 
-   Expected: all tests pass (currently **106** after removing Inngest-only tests; audit + email-match tests preserved under `__tests__/audit` and `__tests__/worker`).
+   Expected: all tests pass (audit + email-match tests under `__tests__/audit` and `__tests__/worker`).
 
-5. **Docker worker image** — From monorepo root:
+3. **Docker worker image** — From monorepo root:
 
    ```bash
    docker build -f worker/Dockerfile -t sifter-worker:local .
@@ -1841,22 +1777,20 @@ Use this section for staging or production acceptance. **Superpowers:** `verific
 
 ### B. Hosting & secrets
 
-6. **Vercel (Next.js)** — Remove or unused: `INNGEST_EVENT_KEY`, `INNGEST_SIGNING_KEY`, any Inngest webhook URLs. **Required:** `UPSTASH_REDIS_URL` (and existing Supabase/GCS keys) so `documentPipelineQueue.add` works.
-
-7. **Inngest Cloud** — Disable or delete the old app sync pointing at `https://<domain>/api/inngest` (endpoint no longer exists).
+4. **Vercel (Next.js)** — **Required:** `UPSTASH_REDIS_URL` (and existing Supabase/GCS keys) so `documentPipelineQueue.add` resolves to Redis.
 
 ### C. Runtime (staging or production)
 
-8. **Fly worker** — Machine(s) running latest image; logs show startup, BullMQ workers, repeatable Gmail job registered (`worker/src/index.ts`).
+5. **Fly worker** — Machine(s) running latest image; logs show startup, BullMQ workers, repeatable Gmail job registered (`worker/src/index.ts`).
 
-9. **Upload → pipeline** — Upload a PDF (or `POST /api/documents/upload` with auth). Confirm: row in `documents`; a job on queue `document-pipeline` (Bull Board on port **9999** via `fly proxy 9999`, or Redis/Bull inspection tool).
+6. **Upload → pipeline** — Upload a PDF (or `POST /api/documents/upload` with auth). Confirm: row in `documents`; a job on queue `document-pipeline` (Bull Board on port **9999** via `fly proxy 9999`, or Redis/Bull inspection tool).
 
-10. **Job completion** — Worker logs show stages running (or a deliberate `rejected` for non-freight). No timeouts attributable to Vercel function limits for pipeline work.
+7. **Job completion** — Worker logs show stages running (or a deliberate `rejected` for non-freight). No timeouts attributable to Vercel function limits for pipeline work.
 
-11. **Gmail / email** — After a sync or inbound message path, jobs appear on `gmail-sync` or `email-events` and complete; notifications rows match schema (`title`, `body`, `invoice_id`, `user_id`, …).
+8. **Gmail / email** — After a sync or inbound message path, jobs appear on `gmail-sync` or `email-events` and complete; notifications rows match schema (`title`, `body`, `invoice_id`, `user_id`, …).
 
 ### D. Optional monitoring
 
-12. **Queue depth** — Under load, autoscaler (if `FLY_API_TOKEN` + `FLY_APP_NAME` set) adjusts machines; no unbounded Redis growth without consumers.
+9. **Queue depth** — Under load, autoscaler (if `FLY_API_TOKEN` + `FLY_APP_NAME` set) adjusts machines; no unbounded Redis growth without consumers.
 
 **Failure handling:** If any check fails, capture logs (Vercel function, Fly `fly logs`, Redis/Bull) and whether `UPSTASH_REDIS_URL` matches between Vercel and Fly.

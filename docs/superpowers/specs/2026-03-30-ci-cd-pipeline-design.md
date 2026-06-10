@@ -72,7 +72,7 @@ Steps:
 
 ### `ci-worker.yml` — triggered on PRs
 
-**Path filter:** `worker/**`, `__tests__/worker/**`, `lib/inngest/**`
+**Path filter:** `worker/**`, `__tests__/worker/**`, `packages/core/**`
 
 ```
 lint + typecheck → worker unit tests → integration tests (Supabase local) → Docker build

@@ -2,19 +2,18 @@
 
 **Date:** 2026-03-28
 **Status:** Approved
-**Replaces:** Inngest-based pipeline (`lib/inngest/`)
 
 ---
 
 ## 1. Problem
 
-All background processing (document OCR, AI classification, invoice normalization, Gmail sync) currently runs as Inngest functions served from `app/api/inngest/route.ts` on Vercel. Inngest orchestrates steps by calling back into Vercel serverless functions, which have a hard execution timeout (60s on Pro, 300s with Fluid compute). Long-running tasks — OCR on large PDFs, multi-step AI pipelines, Gmail backfills covering 500+ messages — cannot reliably complete within these limits.
+Background processing (document OCR, AI classification, invoice normalization, Gmail sync) must not run inside short-lived Vercel serverless invocations. Those functions have a hard execution timeout (60s on Pro, 300s with Fluid compute). Long-running tasks — OCR on large PDFs, multi-step AI pipelines, Gmail backfills covering 500+ messages — need a persistent worker process.
 
 ---
 
 ## 2. Solution
 
-Replace Inngest with a **BullMQ + Upstash Redis + Fly.io worker** architecture.
+Use a **BullMQ + Upstash Redis + Fly.io worker** architecture.
 
 - **Vercel** handles only the web app and API routes. It enqueues jobs; it never runs them.
 - **Upstash Redis** stores job queues (pay-per-command, zero idle cost).
@@ -274,18 +273,15 @@ Access via `fly proxy 9999` from a developer's machine — never public-facing.
 
 ---
 
-## 10. Migration Path from Inngest
-
-The migration is a clean cutover — no parallel running period needed since the pipeline has no user-visible state that depends on Inngest being active.
+## 10. Adoption checklist
 
 1. Set up Upstash Redis, get `UPSTASH_REDIS_URL`
 2. Add `pnpm-workspace.yaml`, scaffold `packages/core/`
-3. Move `lib/` contents into `packages/core/src/`, update all `@/lib/` imports to `@sifter/core/`
+3. Move shared `lib/` modules into `packages/core/src/` where appropriate, re-export via `@sifter/core`
 4. Add `packages/core/queue/` with BullMQ queue definitions and job payload types
 5. Build out `worker/src/` — stages, job handlers, workers, scaler, index
-6. Replace all `inngest.send(...)` calls in Next.js API routes with `queue.add(...)`
+6. Ensure Next.js API routes enqueue work with `queue.add(...)` (not inline long-running pipeline code)
 7. Deploy worker to Fly.io, verify queues drain correctly
-8. Remove `lib/inngest/`, `app/api/inngest/route.ts`, `inngest` from `package.json`
 
 ---
 

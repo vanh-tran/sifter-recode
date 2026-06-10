@@ -1441,15 +1441,7 @@ pnpm test
 
 Expected: all existing tests pass + new tests added in Tasks 2–7
 
-- [ ] **Step 2: Confirm no inngest references crept in**
-
-```bash
-grep -rE 'inngest|INNGEST' app lib __tests__ --include='*.ts' --include='*.tsx' || echo "CLEAN"
-```
-
-Expected: `CLEAN`
-
-- [ ] **Step 3: Build check**
+- [ ] **Step 2: Build check**
 
 ```bash
 pnpm build 2>&1 | tail -10
@@ -1457,7 +1449,7 @@ pnpm build 2>&1 | tail -10
 
 Expected: exit 0
 
-- [ ] **Step 4: Final commit if any stragglers**
+- [ ] **Step 3: Final commit if any stragglers**
 
 ```bash
 git status
